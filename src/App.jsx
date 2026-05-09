@@ -57,7 +57,8 @@ const DATA_VERSION = "v11";
 })();
 
 // ── Default data ──────────────────────────────────────────────
-const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], macro: { fg: null, btcDom: null, regime: null, btcPrice: null }, lastUpdated: null, fleetTotal: null };
+const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], macro: { fg: null, btcDom: null, regime: null, btcPrice: null }, lastUpdated: null, fleetTotal: null, performance: null };
+// performance shape: { trades: 0, winRate: null, avgPct: null, streak: null }
 
 // Stocks scaled so holdings sum = $164,100
 // Total nw = 164,100 + 18,500 + 42,300 + 22,450 + 100 = $247,450 — matches chart
@@ -607,6 +608,23 @@ const parseSGATReport = (text, current) => {
     const fleetTotM  = fleetLine.match(/\$?([\d,]+\.?\d*)/);
     const fleetTotal = fleetTotM ? parseFloat(fleetTotM[1].replace(/,/g, "")) : null;
 
+    // PERFORMANCE line: "PERFORMANCE: 12 trades | Win 67% | Avg 1.4%"
+    // Also handles optional streak: "... | Streak +3"
+    const perfLine   = lines.find(l => /^PERFORMANCE[:\s]/i.test(l.trim())) || "";
+    let performance  = current.performance ?? null;
+    if (perfLine) {
+      const trdM2   = perfLine.match(/(\d+)\s*trades?/i);
+      const winM    = perfLine.match(/Win[:\s]+([\d.]+)%/i);
+      const avgM    = perfLine.match(/Avg[:\s]+([-+]?[\d.]+)%/i);
+      const strM    = perfLine.match(/Streak[:\s]+([-+]?\d+)/i);
+      performance   = {
+        trades:   trdM2  ? parseInt(trdM2[1])     : (current.performance?.trades  ?? 0),
+        winRate:  winM   ? parseFloat(winM[1])    : (current.performance?.winRate  ?? null),
+        avgPct:   avgM   ? parseFloat(avgM[1])    : (current.performance?.avgPct   ?? null),
+        streak:   strM   ? parseInt(strM[1])      : (current.performance?.streak   ?? null),
+      };
+    }
+
     // Timestamp
     const tsM = text.match(/(\d{2}[\/\s]\d{2}[\/\s]\d{4}[,\s]+[\d:]+)/);
     const lastUpdated = tsM ? tsM[1].trim()
@@ -617,7 +635,7 @@ const parseSGATReport = (text, current) => {
 
     if (agents.length === 0) return null;
     return { deployed, pnl, pnlPct, trades,
-             agents, macro, lastUpdated, fleetTotal };
+             agents, macro, lastUpdated, fleetTotal, performance };
   } catch(e) { console.error("parseSGAT:", e); return null; }
 };
 
@@ -1665,6 +1683,77 @@ export default function GATControlRoom() {
               <Body size={12} color={C.textMuted}>
                 14-day challenge required before MGAT unlocks.
               </Body>
+            </Card>
+
+            {/* ── Performance Card ── */}
+            <Card style={{ border: `1px solid ${C.green}30` }}>
+              <SHead icon="📊" title="Fleet Performance" right={
+                fleetLastFetched
+                  ? <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                      <Dot color={C.green} />
+                      <span style={{ fontSize:11, color:C.greenText, fontFamily:sans }}>Live · {fleetLastFetched}</span>
+                    </div>
+                  : <Badge color={C.textMuted}>Fetching…</Badge>
+              } />
+              {sgatData.performance ? (
+                <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap:10 }}>
+                  {/* Total trades */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>Total Trades</p>
+                    <p style={{ fontSize:24, fontWeight:700, color:C.white, fontFamily:mono, margin:0 }}>
+                      {sgatData.performance.trades}
+                    </p>
+                  </div>
+                  {/* Win rate */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>Win Rate</p>
+                    <p style={{ fontSize:24, fontWeight:700, fontFamily:mono, margin:0,
+                      color: sgatData.performance.winRate == null ? C.textMuted
+                        : sgatData.performance.winRate >= 55 ? C.greenText
+                        : sgatData.performance.winRate >= 45 ? C.yellow : C.red }}>
+                      {sgatData.performance.winRate != null ? `${sgatData.performance.winRate}%` : "—"}
+                    </p>
+                  </div>
+                  {/* Avg P&L */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>Avg P&L</p>
+                    <p style={{ fontSize:24, fontWeight:700, fontFamily:mono, margin:0,
+                      color: sgatData.performance.avgPct == null ? C.textMuted
+                        : sgatData.performance.avgPct >= 0 ? C.greenText : C.red }}>
+                      {sgatData.performance.avgPct != null
+                        ? `${sgatData.performance.avgPct >= 0 ? "+" : ""}${sgatData.performance.avgPct}%`
+                        : "—"}
+                    </p>
+                  </div>
+                  {/* Streak */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>Streak</p>
+                    <p style={{ fontSize:24, fontWeight:700, fontFamily:mono, margin:0,
+                      color: sgatData.performance.streak == null ? C.textMuted
+                        : sgatData.performance.streak > 0 ? C.greenText
+                        : sgatData.performance.streak < 0 ? C.red : C.textMuted }}>
+                      {sgatData.performance.streak != null
+                        ? `${sgatData.performance.streak > 0 ? "+" : ""}${sgatData.performance.streak}`
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding:"20px 0", textAlign:"center" }}>
+                  <p style={{ fontSize:13, color:C.textMuted, fontFamily:sans, margin:0 }}>
+                    {fleetStatus === "loading" ? "⟳ Loading performance data…"
+                      : fleetStatus === "ok" ? "No PERFORMANCE line in report yet"
+                      : "Waiting for fleet data…"}
+                  </p>
+                  <p style={{ fontSize:11, color:C.textMuted, fontFamily:mono, margin:"6px 0 0" }}>
+                    Add: PERFORMANCE: X trades | Win X% | Avg X% | Streak +X
+                  </p>
+                </div>
+              )}
             </Card>
 
             {/* ── Last System Check ── */}
