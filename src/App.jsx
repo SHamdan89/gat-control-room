@@ -46,7 +46,7 @@ function safeSet(key, value) {
 }
 
 // ── Data version guard — bumping DATA_VERSION wipes stale localStorage ──
-const DATA_VERSION = "v11";
+const DATA_VERSION = "v12";
 (function resetIfStale() {
   if (safeGet("gat_version", null) !== DATA_VERSION) {
     ["gat_sgatData","gat_stocksData","gat_hardAssets","gat_perfData","gat_reData","gat_quantities","gat_livePrices","gat_sgat","gat_stk","gat_ast","gat_hist"].forEach(k => {
@@ -57,7 +57,8 @@ const DATA_VERSION = "v11";
 })();
 
 // ── Default data ──────────────────────────────────────────────
-const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], macro: { fg: null, btcDom: null, regime: null, btcPrice: null }, lastUpdated: null, fleetTotal: null, performance: null };
+const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], macro: { fg: null, btcDom: null, regime: null, btcPrice: null }, lastUpdated: null, fleetTotal: null, performance: null, checkResults: null };
+// checkResults shape: { passed: 0, failed: 0, warnings: 0, checkedAt: "HH:MM" }
 // performance shape: { trades: 0, winRate: null, avgPct: null, streak: null }
 
 // Stocks scaled so holdings sum = $164,100
@@ -625,6 +626,23 @@ const parseSGATReport = (text, current) => {
       };
     }
 
+    // System check counts: "✅ PASSED: 26 | ❌ FAILED: 0 | ⚠️ WARNINGS: 0"
+    const checkLine   = lines.find(l => /PASSED[:\s]+\d+/i.test(l)) || "";
+    let checkResults  = current.checkResults ?? null;
+    if (checkLine) {
+      const ckPassM = checkLine.match(/PASSED[:\s]+(\d+)/i);
+      const ckFailM = checkLine.match(/FAILED[:\s]+(\d+)/i);
+      const ckWarnM = checkLine.match(/WARNINGS?[:\s]+(\d+)/i);
+      if (ckPassM) {
+        checkResults = {
+          passed:    parseInt(ckPassM[1]),
+          failed:    ckFailM   ? parseInt(ckFailM[1])   : 0,
+          warnings:  ckWarnM  ? parseInt(ckWarnM[1])   : 0,
+          checkedAt: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+        };
+      }
+    }
+
     // Timestamp
     const tsM = text.match(/(\d{2}[\/\s]\d{2}[\/\s]\d{4}[,\s]+[\d:]+)/);
     const lastUpdated = tsM ? tsM[1].trim()
@@ -635,7 +653,7 @@ const parseSGATReport = (text, current) => {
 
     if (agents.length === 0) return null;
     return { deployed, pnl, pnlPct, trades,
-             agents, macro, lastUpdated, fleetTotal, performance };
+             agents, macro, lastUpdated, fleetTotal, performance, checkResults };
   } catch(e) { console.error("parseSGAT:", e); return null; }
 };
 
@@ -1757,21 +1775,31 @@ export default function GATControlRoom() {
 
             {/* ── Last System Check ── */}
             {(() => {
-              // Derive live check data from fleet when available
               const hasLive     = sgatData.agents.length > 0;
               const hasError    = hasLive && sgatData.agents.some(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase()));
-              const liveStatus  = hasLive ? (hasError ? "FAILURES" : "ALL SYSTEMS GO") : null;
-              const displayStatus    = liveStatus    ?? sysCheckData.status;
-              const displayTimestamp = fleetLastFetched ? `Auto-fetched ${fleetLastFetched}` : sysCheckData.timestamp || null;
-              const displayPassed    = hasLive ? 35 : sysCheckData.passed;
-              const displayWarnings  = hasLive ? 0  : sysCheckData.warnings;
-              const displayFailed    = hasLive ? (hasError ? sgatData.agents.filter(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase())).length : 0) : sysCheckData.failed;
+
+              // Use parsed check_results from Drive report when available
+              const cr = sgatData.checkResults;
+              const hasCheckData = !!cr;
+
+              const displayPassed   = hasCheckData ? cr.passed   : sysCheckData.passed;
+              const displayWarnings = hasCheckData ? cr.warnings : sysCheckData.warnings;
+              const displayFailed   = hasCheckData ? cr.failed
+                : (hasLive ? (hasError ? sgatData.agents.filter(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase())).length : 0) : sysCheckData.failed);
+
+              const displayStatus = hasCheckData
+                ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : "ALL SYSTEMS GO")
+                : (hasLive ? (hasError ? "FAILURES" : "ALL SYSTEMS GO") : sysCheckData.status);
+
+              const displayTimestamp = hasCheckData
+                ? `Last check: ${cr.checkedAt}`
+                : (fleetLastFetched ? `Fleet: ${fleetLastFetched}` : sysCheckData.timestamp || null);
 
               return (
             <Card>
               <SHead icon="🔧" title="Last System Check"
                 right={displayTimestamp
-                  ? <Badge color={hasLive ? C.greenText : C.textMuted}>{displayTimestamp}</Badge>
+                  ? <Badge color={hasCheckData ? C.greenText : C.textMuted}>{displayTimestamp}</Badge>
                   : <Badge color={C.textMuted}>No data yet</Badge>}
               />
 
@@ -1812,7 +1840,6 @@ export default function GATControlRoom() {
                   }}>
                     {displayStatus === "ALL SYSTEMS GO" ? "✅" : displayStatus === "WARNINGS" ? "⚠" : "❌"}{" "}
                     {displayStatus}
-                    {hasLive && <span style={{ fontSize: 11, fontWeight: 400, color: C.textMuted, marginLeft: 8 }}>(derived from fleet)</span>}
                   </p>
                 </div>
               )}
@@ -1836,7 +1863,9 @@ export default function GATControlRoom() {
               </div>
 
               <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: "12px 0 0" }}>
-                System check auto-derived from fleet data every 60 seconds.
+                {hasCheckData
+                  ? `Counts from Drive report — auto-refreshed every 60s`
+                  : `Waiting for check report · Mac Mini writes at 06:45 Bahrain`}
               </p>
             </Card>
               );
@@ -2397,7 +2426,7 @@ export default function GATControlRoom() {
               <Body size={13} color={C.textMuted}>
                 Generates a structured snapshot of all your data. Copy it, paste into your ATLAS
                 conversation, and get your full weekly intelligence and recommendations.
-              </Body>
+                      </Body>
               <Hr />
               <button
                 onClick={genBriefing}
