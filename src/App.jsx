@@ -1223,13 +1223,10 @@ export default function GATControlRoom() {
             {/* Net worth */}
             <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 16 }}>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: C.white,
-                  fontFamily: mono, letterSpacing: "-0.03em", margin: 0 }}>{fmt(nw)}</p>
-                <p style={{ fontSize: isMobile ? 10 : 12, color: C.greenText, fontFamily: sans, margin: 0 }}>
-                  {wkChg === 0 ? "Apply Update to track changes" : `${wkChg >= 0 ? "+" : ""}${fmt(Math.abs(wkChg))} this week`}
-                </p>
-                <p style={{ fontSize: isMobile ? 10 : 11, color: investmentGain >= 0 ? C.greenText : C.red, fontFamily: sans, margin: 0 }}>
-                  Overall: {investmentGain >= 0 ? "+" : ""}{fmt(investmentGain)} ({investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(1)}%)
+                <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: C.textMuted,
+                  fontFamily: mono, letterSpacing: "-0.03em", margin: 0 }}>—</p>
+                <p style={{ fontSize: isMobile ? 10 : 12, color: C.textMuted, fontFamily: sans, margin: 0 }}>
+                  Manual update required
                 </p>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -1280,7 +1277,7 @@ export default function GATControlRoom() {
                   </Badge>
                 </div>
               } />
-              <BigNum color={C.greenText} size={isMobile ? 26 : 32}>{fmt(nw)}</BigNum>
+              <BigNum color={C.textMuted} size={isMobile ? 26 : 32}>—</BigNum>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 4 }}>
                 <Body color={C.textMuted} size={12}>Stocks + Gold + BTC + House equity + SGAT</Body>
                 <Body color={investmentGain >= 0 ? C.greenText : C.red} size={12}>
@@ -1679,9 +1676,9 @@ export default function GATControlRoom() {
             </Card>
 
             <Card>
-              <SHead icon="⚡" title="Charlie — Orchestrator" right={<Badge>Phase 1</Badge>} />
+              <SHead icon="⚡" title="Charlie — Reporter" right={<Badge color={C.greenText}>Active</Badge>} />
               <Body size={12} color={C.textMuted}>
-                14-day challenge required before MGAT unlocks.
+                Pure Node.js reporter. 5 daily Telegram reports. No LLM in routine loop.
               </Body>
             </Card>
 
@@ -1743,14 +1740,16 @@ export default function GATControlRoom() {
                   </div>
                 </div>
               ) : (
-                <div style={{ padding:"20px 0", textAlign:"center" }}>
+                <div style={{ background:C.surfaceAlt, border:`1px solid ${C.border}`,
+                  borderRadius:10, padding:"18px 16px", textAlign:"center" }}>
                   <p style={{ fontSize:13, color:C.textMuted, fontFamily:sans, margin:0 }}>
                     {fleetStatus === "loading" ? "⟳ Loading performance data…"
-                      : fleetStatus === "ok" ? "No PERFORMANCE line in report yet"
+                      : fleetStatus === "ok" ? "No trades yet — no PERFORMANCE line in report"
                       : "Waiting for fleet data…"}
                   </p>
-                  <p style={{ fontSize:11, color:C.textMuted, fontFamily:mono, margin:"6px 0 0" }}>
-                    Add: PERFORMANCE: X trades | Win X% | Avg X% | Streak +X
+                  <p style={{ fontSize:11, color:C.textMuted, fontFamily:mono, margin:"8px 0 0",
+                    padding:"6px 10px", background:C.bg, borderRadius:6, display:"inline-block" }}>
+                    Expected: PERFORMANCE: X trades | Win X% | Avg X% | Streak +X
                   </p>
                 </div>
               )}
@@ -1836,39 +1835,9 @@ export default function GATControlRoom() {
                 ))}
               </div>
 
-              <Hr my={0} />
-
-              {/* Paste zone */}
-              <div style={{ marginTop: 14 }}>
-                <SLabel>Paste system check output</SLabel>
-                <textarea
-                  value={sysRaw}
-                  onChange={e => setSysRaw(e.target.value)}
-                  placeholder={"SGAT REPORT - 07/05/2026 10:28 Bahrain\n...\nSYSTEM: Data Agent [OK] | Memory Agent [OK] | Alerts: none\nPASSED: 23\nWARNINGS: 0\nFAILED: 0\nALL SYSTEMS GO"}
-                  rows={5}
-                  style={{
-                    width: "100%", background: C.bg, border: `1px solid ${C.border}`,
-                    borderRadius: 10, color: C.textSecondary, fontSize: 12,
-                    fontFamily: mono, padding: "10px 12px", resize: "vertical",
-                    outline: "none", lineHeight: 1.6, marginBottom: 10,
-                  }}
-                  onFocus={e => e.target.style.borderColor = C.green}
-                  onBlur={e  => e.target.style.borderColor = C.border}
-                />
-                <button
-                  onClick={() => {
-                    const parsed = parseSysCheck(sysRaw);
-                    if (parsed) setSysCheckData(parsed);
-                  }}
-                  style={{
-                    width: "100%", padding: "11px", background: C.surfaceAlt,
-                    border: `1px solid ${C.border}`, borderRadius: 10,
-                    color: C.textSecondary, fontSize: 13, fontWeight: 600,
-                    fontFamily: sans, transition: "opacity 0.2s",
-                  }}>
-                  ↑ Parse System Check
-                </button>
-              </div>
+              <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: "12px 0 0" }}>
+                System check auto-derived from fleet data every 60 seconds.
+              </p>
             </Card>
               );
             })()}
