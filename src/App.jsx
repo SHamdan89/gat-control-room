@@ -46,7 +46,7 @@ function safeSet(key, value) {
 }
 
 // ── Data version guard — bumping DATA_VERSION wipes stale localStorage ──
-const DATA_VERSION = "v12";
+const DATA_VERSION = "v13";
 (function resetIfStale() {
   if (safeGet("gat_version", null) !== DATA_VERSION) {
     ["gat_sgatData","gat_stocksData","gat_hardAssets","gat_perfData","gat_reData","gat_quantities","gat_livePrices","gat_sgat","gat_stk","gat_ast","gat_hist"].forEach(k => {
@@ -57,8 +57,9 @@ const DATA_VERSION = "v12";
 })();
 
 // ── Default data ──────────────────────────────────────────────
-const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], macro: { fg: null, btcDom: null, regime: null, btcPrice: null }, lastUpdated: null, fleetTotal: null, performance: null, checkResults: null };
+const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], macro: { fg: null, btcDom: null, regime: null, btcPrice: null }, lastUpdated: null, fleetTotal: null, performance: null, checkResults: null, scan: null };
 // checkResults shape: { passed: 0, failed: 0, warnings: 0, checkedAt: "HH:MM" }
+// scan shape: [{ chain: "SOL", seen: 30, passed: 0 }, ...]
 // performance shape: { trades: 0, winRate: null, avgPct: null, streak: null }
 
 // Stocks scaled so holdings sum = $164,100
@@ -643,6 +644,19 @@ const parseSGATReport = (text, current) => {
       }
     }
 
+    // SCAN line: "SCAN: SOL 30/0 | BASE 2/0 | ETH 12/0 | BSC 9/0 | SUI 0/0"
+    const scanLine = lines.find(l => /^SCAN[:\s]/i.test(l.trim())) || "";
+    let scan = current.scan ?? null;
+    if (scanLine) {
+      const scanBody = scanLine.replace(/^SCAN[:\s]*/i, "");
+      const entries  = scanBody.split("|").map(s => s.trim()).filter(Boolean);
+      const parsed   = entries.map(e => {
+        const m = e.match(/^(\S+)\s+(\d+)\/(\d+)/);
+        return m ? { chain: m[1].toUpperCase(), seen: parseInt(m[2]), passed: parseInt(m[3]) } : null;
+      }).filter(Boolean);
+      if (parsed.length > 0) scan = parsed;
+    }
+
     // Timestamp
     const tsM = text.match(/(\d{2}[\/\s]\d{2}[\/\s]\d{4}[,\s]+[\d:]+)/);
     const lastUpdated = tsM ? tsM[1].trim()
@@ -653,7 +667,7 @@ const parseSGATReport = (text, current) => {
 
     if (agents.length === 0) return null;
     return { deployed, pnl, pnlPct, trades,
-             agents, macro, lastUpdated, fleetTotal, performance, checkResults };
+             agents, macro, lastUpdated, fleetTotal, performance, checkResults, scan };
   } catch(e) { console.error("parseSGAT:", e); return null; }
 };
 
@@ -1605,7 +1619,7 @@ export default function GATControlRoom() {
                       ? <Badge color={C.textMuted}>⟳ Fetching…</Badge>
                       : fleetStatus === "error"
                         ? <Badge color={C.red}>⚠ Fetch error</Badge>
-                        : <Badge color={C.textMuted}>● 6 Active</Badge>
+                        : <Badge color={C.textMuted}>● 10 Active</Badge>
                   }
                   <button
                     onClick={fetchFleetData}
@@ -1640,7 +1654,7 @@ export default function GATControlRoom() {
               </div>
               {(sgatData.agents.length > 0
                 ? sgatData.agents
-                : ["SGAT_SOL","SGAT_BASE","SGAT_ETH","SGAT_BSC","SGAT_BTCB","SGAT_SUI"].map(n => ({ name: n, status: "", mode: "—", usdc: 0, trades: 0, pnl: 0, position: null }))
+                : ["SGAT_SOL","SGAT_BASE","SGAT_ETH","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_ETH_N","SGAT_BSC_N","SGAT_SUI_N"].map(n => ({ name: n, status: "", mode: "—", usdc: 0, trades: 0, pnl: 0, position: null }))
               ).map((ag, i) => {
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
@@ -1691,6 +1705,32 @@ export default function GATControlRoom() {
                 <Body size={12} color={C.textMuted}>Fleet total</Body>
                 <p style={{ fontSize: 13, fontWeight: 700, color: C.white, fontFamily: mono, margin: 0 }}>{fmt(sgatData.deployed)}</p>
               </div>
+              {/* SCAN log row */}
+              {sgatData.scan && (
+                <>
+                  <Hr my={0} />
+                  <div style={{ padding: "8px 10px" }}>
+                    <p style={{ fontSize: 10, color: C.textMuted, fontFamily: sans,
+                      letterSpacing: "0.07em", textTransform: "uppercase", margin: "0 0 6px" }}>
+                      Scan log — seen / passed
+                    </p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {sgatData.scan.map(({ chain, seen, passed }) => (
+                        <div key={chain} style={{
+                          display: "flex", alignItems: "center", gap: 4,
+                          padding: "3px 8px", borderRadius: 6,
+                          background: C.surfaceAlt, border: `1px solid ${C.border}`,
+                        }}>
+                          <span style={{ fontSize: 11, color: C.textSecondary, fontFamily: mono, fontWeight: 600 }}>{chain}</span>
+                          <span style={{ fontSize: 11, color: C.textMuted, fontFamily: mono }}>{seen}/</span>
+                          <span style={{ fontSize: 11, fontFamily: mono, fontWeight: 700,
+                            color: passed > 0 ? C.greenText : C.textMuted }}>{passed}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </Card>
 
             <Card>
