@@ -1238,7 +1238,7 @@ export default function GATControlRoom() {
           <div style={{ display: "flex", alignItems: "center",
             justifyContent: "space-between", height: isMobile ? 50 : 58 }}>
             {/* Logo */}
-            <svg viewBox="20 60 396 132" style={{ height: isMobile ? 38 : 44, width: "auto", flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="20 58 397 120" style={{ height: isMobile ? 38 : 44, width: "auto", flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="ll_gg" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#00E676"/>
@@ -1286,17 +1286,20 @@ export default function GATControlRoom() {
               <rect x="335" y="75" width="64" height="13" rx="4" fill="url(#ll_gg)"/>
               <rect x="361" y="75" width="13" height="64" rx="4" fill="url(#ll_gg)"/>
               {/* Tagline */}
-              <rect x="122" y="163" width="290" height="1.2" rx="1" fill="#00E676" opacity="0.35"/>
-              <text x="267" y="179" fontFamily="'Courier New', monospace" fontSize="8.5" letterSpacing="3.5" fill="#00E676" opacity="0.5" textAnchor="middle">GROWTH AUTONOMOUS TRADING</text>
+              <text x="217" y="172" fontFamily="'Courier New', monospace" fontSize="13" letterSpacing="3" fill="#00E676" opacity="0.65" textAnchor="middle">GROWTH AUTONOMOUS TRADING</text>
             </svg>
 
             {/* Net worth */}
             <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 16 }}>
               <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: C.textMuted,
-                  fontFamily: mono, letterSpacing: "-0.03em", margin: 0 }}>—</p>
-                <p style={{ fontSize: isMobile ? 10 : 12, color: C.textMuted, fontFamily: sans, margin: 0 }}>
-                  Manual update required
+                <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: C.white,
+                  fontFamily: mono, letterSpacing: "-0.03em", margin: 0 }}>{fmt(nw)}</p>
+                <p style={{ fontSize: isMobile ? 10 : 12, color: C.greenText, fontFamily: sans, margin: "1px 0 0" }}>
+                  {wkChg === 0 ? "Empire total" : `${wkChg >= 0 ? "+" : ""}${fmt(Math.abs(wkChg))} this week`}
+                </p>
+                <p style={{ fontSize: isMobile ? 10 : 11, fontFamily: mono, margin: "1px 0 0",
+                  color: investmentGain >= 0 ? C.greenText : C.red }}>
+                  {investmentGain >= 0 ? "+" : ""}{fmt(investmentGain)} ({investmentGain >= 0 ? "+" : ""}{investmentGainPct.toFixed(1)}%)
                 </p>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -1504,7 +1507,7 @@ export default function GATControlRoom() {
               const segments = [
                 { label: "Gold",       value: goldVal,              color: "#F59E0B" },
                 { label: "BTC",        value: btcVal,               color: "#F97316" },
-                { label: "Stocks",     value: liveStocksData.total, color: C.green   },
+                { label: "Stocks",     value: liveStocksData.total + ibkrCash, color: C.green   },
                 { label: "SGAT",       value: sgatData.deployed,    color: C.yellow  },
                 { label: "House",      value: netEquity,            color: "#60A5FA" },
                 { label: "MGAT",       value: 0,                    color: C.textMuted },
@@ -1556,31 +1559,6 @@ export default function GATControlRoom() {
             <Card>
               <SHead icon="📊" title="Stock Allocation" />
               <AllocBar items={stocksData.holdings.map(s => ({ name: s.ticker, pct: s.actual }))} />
-            </Card>
-
-            {/* Waterfall */}
-            <Card>
-              <SHead icon="💧" title="This Month — Capital Direction" />
-              {[
-                { label: "Available this month", val: 1200, color: C.green,          icon: "◎", indent: 0 },
-                { label: "→ SGAT funding",        val: 100,  color: C.yellow,         icon: "⚡", indent: 1 },
-                { label: "→ Stocks DCA",           val: 1000, color: C.greenDeep,     icon: "📈", indent: 1 },
-                { label: "→ Reserve",              val: 100,  color: C.textSecondary, icon: "🛡️", indent: 1 },
-              ].map((r, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between",
-                  alignItems: "center", padding: "10px 0",
-                  paddingLeft: isMobile ? r.indent * 12 : r.indent * 20,
-                  borderBottom: i < 3 ? `1px solid ${C.border}` : "none" }}>
-                  <p style={{ fontSize: 13, fontFamily: sans,
-                    color: i === 0 ? r.color : C.textSecondary, margin: 0,
-                    display: "flex", alignItems: "center", gap: 8 }}>
-                    <span>{r.icon}</span> {r.label}
-                  </p>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: r.color, fontFamily: mono, margin: 0 }}>
-                    {fmt(r.val)}
-                  </p>
-                </div>
-              ))}
             </Card>
 
             {/* Signal */}
