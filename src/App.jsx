@@ -90,6 +90,7 @@ const DEFAULT_RE = {
 // nw = 0 (stocks) + 111,300 (gold) + 68,800 (btc) + 43,126 (house equity) + 0 (sgat) = $223,226
 const DEFAULT_PERF = [
   { week: "Apr '26", total: 223226, prev: null },
+  { week: "May '26", total: 276549, prev: 223226 },
 ];
 
 const DEFAULT_SIGNAL = {
