@@ -46,7 +46,7 @@ function safeSet(key, value) {
 }
 
 // ── Data version guard — bumping DATA_VERSION wipes stale localStorage ──
-const DATA_VERSION = "v13";
+const DATA_VERSION = "v15";
 (function resetIfStale() {
   if (safeGet("gat_version", null) !== DATA_VERSION) {
     ["gat_sgatData","gat_stocksData","gat_hardAssets","gat_perfData","gat_reData","gat_quantities","gat_livePrices","gat_sgat","gat_stk","gat_ast","gat_hist"].forEach(k => {
