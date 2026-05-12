@@ -1238,19 +1238,57 @@ export default function GATControlRoom() {
           <div style={{ display: "flex", alignItems: "center",
             justifyContent: "space-between", height: isMobile ? 50 : 58 }}>
             {/* Logo */}
-            <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: C.green,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 15, fontWeight: 900, color: "#0B0B09", fontFamily: mono,
-                boxShadow: `0 0 16px ${C.greenGlow}`, flexShrink: 0 }}>G</div>
-              <div>
-                <p style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: C.white,
-                  fontFamily: sans, letterSpacing: "0.04em", margin: 0 }}>GAT Control Room</p>
-                {!isMobile && <p style={{ fontSize: 10, color: C.textMuted, fontFamily: sans, margin: 0 }}>
-                  Growth Autonomous Trading
-                </p>}
-              </div>
-            </div>
+            <svg viewBox="20 60 396 132" style={{ height: isMobile ? 38 : 44, width: "auto", flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="ll_gg" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#00E676"/>
+                  <stop offset="100%" stopColor="#00C853"/>
+                </linearGradient>
+                <linearGradient id="ll_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#00E676"/>
+                  <stop offset="100%" stopColor="#00C853"/>
+                </linearGradient>
+                <filter id="ll_bf" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <filter id="ll_af" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              {/* Icon square */}
+              <rect x="22" y="62" width="90" height="90" rx="10" fill="#212121"/>
+              <rect x="22" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" strokeWidth="1" opacity="0.3"/>
+              <rect x="36" y="116" width="13" height="22" rx="2" fill="#00C853" opacity="0.4"/>
+              <rect x="56" y="101" width="13" height="37" rx="2" fill="#00E676" opacity="0.65"/>
+              <rect x="76" y="84" width="13" height="54" rx="2" fill="url(#ll_bg)" filter="url(#ll_bf)"/>
+              <polyline points="70,78 83,66 96,78" fill="none" stroke="#00E676" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#ll_af)"/>
+              <line x1="83" y1="66" x2="83" y2="82" stroke="#00E676" strokeWidth="2.5" strokeLinecap="round" filter="url(#ll_af)"/>
+              {/* G */}
+              <rect x="122" y="62" width="90" height="90" rx="10" fill="#212121"/>
+              <rect x="122" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" strokeWidth="1" opacity="0.12"/>
+              <rect x="135" y="75" width="13" height="64" rx="4" fill="url(#ll_gg)"/>
+              <rect x="135" y="75" width="64" height="13" rx="4" fill="url(#ll_gg)"/>
+              <rect x="135" y="126" width="64" height="13" rx="4" fill="url(#ll_gg)"/>
+              <rect x="164" y="101" width="35" height="12" rx="4" fill="url(#ll_gg)"/>
+              <rect x="186" y="101" width="13" height="38" rx="4" fill="url(#ll_gg)"/>
+              {/* A */}
+              <rect x="222" y="62" width="90" height="90" rx="10" fill="#212121"/>
+              <rect x="222" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" strokeWidth="1" opacity="0.12"/>
+              <rect x="235" y="75" width="13" height="64" rx="4" fill="url(#ll_gg)"/>
+              <rect x="286" y="75" width="13" height="64" rx="4" fill="url(#ll_gg)"/>
+              <rect x="235" y="75" width="64" height="13" rx="4" fill="url(#ll_gg)"/>
+              <rect x="235" y="101" width="64" height="12" rx="4" fill="url(#ll_gg)"/>
+              {/* T */}
+              <rect x="322" y="62" width="90" height="90" rx="10" fill="#212121"/>
+              <rect x="322" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" strokeWidth="1" opacity="0.12"/>
+              <rect x="335" y="75" width="64" height="13" rx="4" fill="url(#ll_gg)"/>
+              <rect x="361" y="75" width="13" height="64" rx="4" fill="url(#ll_gg)"/>
+              {/* Tagline */}
+              <rect x="122" y="163" width="290" height="1.2" rx="1" fill="#00E676" opacity="0.35"/>
+              <text x="267" y="179" fontFamily="'Courier New', monospace" fontSize="8.5" letterSpacing="3.5" fill="#00E676" opacity="0.5" textAnchor="middle">GROWTH AUTONOMOUS TRADING</text>
+            </svg>
 
             {/* Net worth */}
             <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 16 }}>
