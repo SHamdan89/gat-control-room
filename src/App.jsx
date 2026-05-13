@@ -93,11 +93,6 @@ const DEFAULT_PERF = [
   { week: "May '26", total: 276549, prev: 223226 },
 ];
 
-const DEFAULT_SIGNAL = {
-  date: "",
-  raw: "",   // raw ATLAS text pasted by user
-  items: [], // parsed display items
-};
 
 // ── Base components ───────────────────────────────────────────
 const Card = ({ children, style = {}, highlight = false }) => (
@@ -327,198 +322,6 @@ const PasteZone = ({ icon, label, hint, value, onChange }) => (
   </div>
 );
 
-// ── ATLAS Signal (editable) ───────────────────────────────────
-const Signal = ({ data, onUpdate }) => {
-  const [editing, setEditing] = React.useState(false);
-  const [draft,   setDraft]   = React.useState(data.raw || "");
-
-  const save = () => {
-    const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    // Parse ATLAS text into display items
-    // Each non-empty line becomes an item; lines starting with emoji get icon extracted
-    const lines = draft.trim().split("\n").filter(l => l.trim());
-    const emojiRe = /^(\p{Emoji_Presentation}|\p{Emoji}️)\s*/u;
-    // Colour-code by keyword
-    const colorFor = (txt) => {
-      const t = txt.toUpperCase();
-      if (t.includes("HOLD") || t.includes("BUY") || t.includes("✅")) return C.greenText;
-      if (t.includes("SELL") || t.includes("EXIT") || t.includes("❌")) return C.red;
-      if (t.includes("PRIORITY") || t.includes("⚡") || t.includes("WATCH") || t.includes("👁")) return C.yellow;
-      if (t.includes("IGNORE") || t.includes("🔕")) return C.textMuted;
-      return C.textSecondary;
-    };
-    const items = lines.map(line => {
-      const m = line.match(emojiRe);
-      const icon   = m ? m[0].trim() : "·";
-      const action = m ? line.replace(emojiRe, "").trim() : line.trim();
-      return { icon, action, detail: "", color: colorFor(line) };
-    });
-    onUpdate({ date: today, raw: draft, items });
-    setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.green}50`,
-        borderRadius: 16, padding: "18px 20px" }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: C.green, fontFamily: sans, margin: "0 0 12px" }}>
-          ⚡ Paste ATLAS Signal
-        </p>
-        <textarea
-          value={draft}
-          onChange={e => setDraft(e.target.value)}
-          placeholder={"Paste your ATLAS response here.\nEach line becomes a signal item.\nLines starting with an emoji use it as the icon.\n\nExample:\n✅ HOLD — Stocks on target\n⚡ PRIORITY — Keep SGAT funded\n👁 WATCH — AMD earnings May 6"}
-          rows={10}
-          autoFocus
-          style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`,
-            borderRadius: 10, padding: "12px 14px", color: C.textPrimary,
-            fontFamily: sans, fontSize: 13, lineHeight: 1.65, resize: "vertical",
-            outline: "none", marginBottom: 12 }}
-        />
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={save}
-            style={{ flex: 1, padding: "11px", background: C.green, border: "none",
-              borderRadius: 10, color: "#0B0B09", fontWeight: 700, fontFamily: sans, fontSize: 13 }}>
-            ✓ Save Signal
-          </button>
-          <button onClick={() => setEditing(false)}
-            style={{ padding: "11px 16px", background: "none", border: `1px solid ${C.border}`,
-              borderRadius: 10, color: C.textMuted, fontFamily: sans, fontSize: 13 }}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ background: C.surfaceAlt, border: `1px solid ${C.green}30`,
-      borderRadius: 16, padding: "18px 20px", boxShadow: `inset 0 0 0 1px ${C.green}15` }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: C.green,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, boxShadow: `0 0 16px ${C.greenGlow}` }}>⚡</div>
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 700, color: C.green, fontFamily: sans, margin: "0 0 2px" }}>
-              ATLAS Weekly Signal
-            </p>
-            <p style={{ fontSize: 12, color: C.textMuted, fontFamily: sans, margin: 0 }}>
-              {data.date || "Not set yet"}
-            </p>
-          </div>
-        </div>
-        <button onClick={() => { setDraft(data.raw || ""); setEditing(true); }}
-          style={{ background: "none", border: `1px solid ${C.border}`, borderRadius: 8,
-            padding: "5px 12px", color: C.textMuted, fontSize: 12, fontFamily: sans }}>
-          Update Signal
-        </button>
-      </div>
-      {data.items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <p style={{ color: C.textMuted, fontSize: 13, fontFamily: sans, marginBottom: 12 }}>
-            No signal yet — paste your ATLAS response to populate this panel.
-          </p>
-          <button onClick={() => setEditing(true)}
-            style={{ padding: "10px 20px", background: C.green, border: "none",
-              borderRadius: 10, color: "#0B0B09", fontWeight: 700, fontFamily: sans, fontSize: 13 }}>
-            + Paste Signal
-          </button>
-        </div>
-      ) : (
-        data.items.map((item, i) => (
-          <div key={i} style={{ display: "flex", gap: 14, padding: "11px 0",
-            borderBottom: i < data.items.length - 1 ? `1px solid ${C.border}` : "none" }}>
-            <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
-            <p style={{ fontSize: 13, fontWeight: 600, color: item.color || C.textPrimary,
-              fontFamily: sans, lineHeight: 1.55, margin: 0 }}>{item.action}</p>
-          </div>
-        ))
-      )}
-    </div>
-  );
-};
-
-// ── MGAT locked view ──────────────────────────────────────────
-const MGATLocked = () => (
-  <div style={{ display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-    <div style={{ width: 72, height: 72, borderRadius: 18, background: C.surfaceAlt,
-      border: `2px solid ${C.border}`, display: "flex", alignItems: "center",
-      justifyContent: "center", fontSize: 32, marginBottom: 24, opacity: 0.5 }}>🔒</div>
-    <p style={{ fontSize: 18, fontWeight: 700, color: C.textMuted, fontFamily: sans, margin: "0 0 10px" }}>
-      MGAT — Dormant
-    </p>
-    <p style={{ fontSize: 14, color: C.textMuted, fontFamily: sans, lineHeight: 1.7, maxWidth: 300, margin: "0 0 28px" }}>
-      Multi-agent trading engine. Activates when SGAT completes the{" "}
-      <span style={{ color: C.yellow }}>14-day challenge</span>.
-    </p>
-    <div style={{ marginBottom: 32 }}>
-      <Badge color={C.yellow}>SGAT Phase 1 in progress</Badge>
-    </div>
-    <div style={{ width: "100%", maxWidth: 320, background: C.surfaceAlt,
-      border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 28 }}>
-      <p style={{ fontSize: 11, color: C.textMuted, fontFamily: sans, margin: "0 0 12px",
-        letterSpacing: "0.06em", textTransform: "uppercase" }}>Planned Architecture</p>
-      {["MGAT_ALPHA", "MGAT_BETA", "MGAT_GAMMA", "MGAT_DELTA"].map((name, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "8px 0", borderBottom: i < 3 ? `1px solid ${C.border}` : "none" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.border }} />
-            <p style={{ fontSize: 13, color: C.textMuted, fontFamily: mono, margin: 0 }}>{name}</p>
-          </div>
-          <Badge color={C.textMuted}>Locked</Badge>
-        </div>
-      ))}
-    </div>
-    <Card style={{ width: "100%", maxWidth: 320 }}>
-      <p style={{ fontSize: 12, color: C.textMuted, fontFamily: sans, margin: "0 0 12px",
-        textTransform: "uppercase", letterSpacing: "0.06em" }}>The Vision</p>
-      {[
-        "SGAT funds MGAT launch ($1,000)",
-        "MGAT runs 4 parallel agents",
-        "Profits cycle back to SGAT",
-        "GAT engine funds all long-term assets",
-        "Empire self-sustaining — Solomon directs only",
-      ].map((txt, i) => (
-        <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0",
-          borderBottom: i < 4 ? `1px solid ${C.border}` : "none", alignItems: "flex-start" }}>
-          <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0, paddingTop: 1, minWidth: 20 }}>
-            {String(i + 1).padStart(2, "0")}
-          </p>
-          <p style={{ fontSize: 13, color: C.textSecondary, fontFamily: sans, lineHeight: 1.55, margin: 0 }}>{txt}</p>
-        </div>
-      ))}
-    </Card>
-  </div>
-);
-
-// ── Status toast ──────────────────────────────────────────────
-const Toast = ({ status }) => {
-  if (!status) return null;
-  const ok = status === "success";
-  return (
-    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-      zIndex: 9999, background: ok ? C.greenDeep : "#9B1C1C",
-      border: `1px solid ${ok ? C.green : C.red}`, borderRadius: 12,
-      padding: "12px 20px", color: ok ? "#0B0B09" : C.white,
-      fontSize: 14, fontWeight: 600, fontFamily: sans,
-      boxShadow: `0 8px 32px ${ok ? C.greenGlow : C.red + "40"}`,
-      animation: "fadeUp 0.3s ease", whiteSpace: "nowrap" }}>
-      {ok ? "✓ Dashboard updated — all tabs reflect new data" : "⚠ Some values couldn't parse — previous data kept"}
-    </div>
-  );
-};
-
-// ── Parser helpers ────────────────────────────────────────────
-const extractNum = (text, ...patterns) => {
-  for (const pat of patterns) {
-    const m = text.match(pat);
-    if (m) return parseFloat(m[1].replace(/,/g, ""));
-  }
-  return null;
-};
-
 const parseSGATReport = (text, current) => {
   if (!text || !text.trim()) return null;
   try {
@@ -544,7 +347,8 @@ const parseSGATReport = (text, current) => {
 
       // parts[2] = "0 trades"
       const trdM  = parts[2].match(/(\d+)/);
-      const trd   = trdM ? parseInt(trdM[1]) : 0;
+      const FAILED_SWAP_MODES = ["SWAP_FAILED", "SWAP_NO_TXID"];
+      const trd   = (trdM && !FAILED_SWAP_MODES.includes(mode)) ? parseInt(trdM[1]) : 0;
 
       // parts[3] = "PNL: $0.00" | "P&L: $4.21" | "P&L -$1.54" | "P&L $0" | "P&L —"
       // Strip $ first so "-$1.54" becomes "-1.54" before sign+number extraction
@@ -628,21 +432,21 @@ const parseSGATReport = (text, current) => {
       };
     }
 
-    // System check counts: "✅ PASSED: 26 | ❌ FAILED: 0 | ⚠️ WARNINGS: 0"
-    const checkLine   = lines.find(l => /PASSED[:\s]+\d+/i.test(l)) || "";
+    // System check counts — handles single-line and separate-line formats
+    const passedLine   = lines.find(l => /PASSED[:\s]+\d+/i.test(l))   || "";
+    const failedLine   = lines.find(l => /FAILED[:\s]+\d+/i.test(l))   || "";
+    const warningsLine = lines.find(l => /WARNINGS?[:\s]+\d+/i.test(l)) || "";
     let checkResults  = current.checkResults ?? null;
-    if (checkLine) {
-      const ckPassM = checkLine.match(/PASSED[:\s]+(\d+)/i);
-      const ckFailM = checkLine.match(/FAILED[:\s]+(\d+)/i);
-      const ckWarnM = checkLine.match(/WARNINGS?[:\s]+(\d+)/i);
-      if (ckPassM) {
-        checkResults = {
-          passed:    parseInt(ckPassM[1]),
-          failed:    ckFailM   ? parseInt(ckFailM[1])   : 0,
-          warnings:  ckWarnM  ? parseInt(ckWarnM[1])   : 0,
-          checkedAt: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-        };
-      }
+    const ckPassM = passedLine.match(/PASSED[:\s]+(\d+)/i);
+    const ckFailM = failedLine.match(/FAILED[:\s]+(\d+)/i);
+    const ckWarnM = warningsLine.match(/WARNINGS?[:\s]+(\d+)/i);
+    if (ckPassM) {
+      checkResults = {
+        passed:    parseInt(ckPassM[1]),
+        failed:    ckFailM   ? parseInt(ckFailM[1])   : 0,
+        warnings:  ckWarnM  ? parseInt(ckWarnM[1])   : 0,
+        checkedAt: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      };
     }
 
     // SCAN line: "SCAN: SOL 30/0 | BASE 2/0 | ETH 12/0 | BSC 9/0 | SUI 0/0"
@@ -1045,8 +849,7 @@ export default function GATControlRoom() {
   const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
   // ── Signal state (persisted) ─────────────────────────────
-  const [signal, setSignal] = useState(() => safeGet("gat_signal", DEFAULT_SIGNAL));
-  useEffect(() => { safeSet("gat_signal", signal); }, [signal]);
+
 
   // ── System Check state ────────────────────────────────────
   const [sysCheckData, setSysCheckData] = useState(() => safeGet("gat_syscheck", { timestamp: "", passed: 0, warnings: 0, failed: 0, status: "" }));
@@ -1351,7 +1154,7 @@ export default function GATControlRoom() {
                   </Badge>
                 </div>
               } />
-              <BigNum color={C.textMuted} size={isMobile ? 26 : 32}>—</BigNum>
+              <BigNum color={C.greenText} size={isMobile ? 26 : 32}>{fmt(nw)}</BigNum>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 4 }}>
                 <Body color={C.textMuted} size={12}>Stocks + Gold + BTC + House equity + SGAT</Body>
                 <Body color={investmentGain >= 0 ? C.greenText : C.red} size={12}>
@@ -1562,8 +1365,6 @@ export default function GATControlRoom() {
               <AllocBar items={stocksData.holdings.map(s => ({ name: s.ticker, pct: s.actual }))} />
             </Card>
 
-            {/* Signal */}
-            <Signal data={signal} onUpdate={setSignal} />
           </div>
         )}
 
@@ -1674,7 +1475,7 @@ export default function GATControlRoom() {
                 : ["SGAT_SOL","SGAT_BASE","SGAT_ETH","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_ETH_N","SGAT_BSC_N","SGAT_SUI_N"].map(n => ({ name: n, status: "", mode: "—", usdc: 0, trades: 0, pnl: 0, position: null }))
               ).map((ag, i) => {
                 const pos = ag.position || null;
-                const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
+                const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
                 const balance = pos ? pos.total_wallet : (ag.usdc || 0);
                 return (
                   <div key={i} style={{
@@ -1687,7 +1488,13 @@ export default function GATControlRoom() {
                       gap: 8, padding: "10px 10px" }}>
                       <p style={{ fontSize: 13, color: pos ? C.yellow : C.white, fontFamily: mono, margin: 0, fontWeight: 600, alignSelf: "center" }}>{ag.name}</p>
                       <p style={{ fontSize: 13, color: C.white, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>${balance.toFixed(2)}</p>
-                      <p style={{ fontSize: 11, color: modeColor, fontFamily: sans, margin: 0, textAlign: "right", alignSelf: "center", fontWeight: 600 }}>{ag.mode}</p>
+                      <div style={{ textAlign: "right", alignSelf: "center" }}>
+                        <p style={{ fontSize: 11, color: modeColor, fontFamily: sans, margin: 0, fontWeight: 600 }}>{ag.mode}</p>
+                        {ag.mode === "CANDIDATE_FOUND" && (
+                          <p style={{ fontSize: 9, color: C.textMuted, fontFamily: sans, margin: "1px 0 0",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>V3.2 — no trade</p>
+                        )}
+                      </div>
                       <p style={{ fontSize: 13, color: C.textMuted, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>{ag.trades ?? 0}</p>
                       {pos ? (
                         <div style={{ textAlign: "right", alignSelf: "center" }}>
