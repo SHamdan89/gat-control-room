@@ -26,6 +26,8 @@ const C = {
   yellow:       "#FBBF24",
   yellowDim:    "#FBBF2418",
   white:        "#F5F4F0",
+  blue:         "#60A5FA",
+  blueDim:      "#60A5FA22",
 };
 
 const mono  = "'SF Mono', 'Fira Code', 'Courier New', monospace";
@@ -1472,7 +1474,7 @@ export default function GATControlRoom() {
               </div>
               {(sgatData.agents.length > 0
                 ? sgatData.agents
-                : ["SGAT_SOL","SGAT_BASE","SGAT_ETH","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_ETH_N","SGAT_BSC_N","SGAT_SUI_N"].map(n => ({ name: n, status: "", mode: "—", usdc: 0, trades: 0, pnl: 0, position: null }))
+                : ["SGAT_SOL","SGAT_BASE","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_wETH","SGAT_BSC_N","SGAT_SUI_N","SGAT_CASH"].map(n => ({ name: n, status: "", mode: n === "SGAT_CASH" ? "FROZEN" : "—", usdc: n === "SGAT_CASH" ? 119 : 0, trades: 0, pnl: 0, position: null }))
               ).map((ag, i) => {
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
