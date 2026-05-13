@@ -2319,7 +2319,8 @@ export default function GATControlRoom() {
       </div>
 
       {/* Toast notification */}
-      <Toast status={updateStatus} />
+      
     </div>
   );
 }
+
