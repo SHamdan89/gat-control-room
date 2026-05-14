@@ -51,7 +51,7 @@ function safeSet(key, value) {
 const DATA_VERSION = "v15";
 (function resetIfStale() {
   if (safeGet("gat_version", null) !== DATA_VERSION) {
-    ["gat_sgatData","gat_stocksData","gat_hardAssets","gat_perfData","gat_reData","gat_quantities","gat_livePrices","gat_sgat","gat_stk","gat_ast","gat_hist"].forEach(k => {
+    ["gat_sgatData","gat_stocksData","gat_hardAssets","gat_perfData","gat_reData","gat_quantities","gat_livePrices","gat_sgat","gat_stk","gat_ast","gat_hist","gat_daily_snapshots"].forEach(k => {
       try { localStorage.removeItem(k); } catch {}
     });
     safeSet("gat_version", DATA_VERSION);
@@ -886,6 +886,27 @@ export default function GATControlRoom() {
   useEffect(() => { safeSet("gat_syscheck", sysCheckData); }, [sysCheckData]);
   useEffect(() => { try { localStorage.setItem("gat_sysraw", sysRaw); } catch {} }, [sysRaw]);
 
+  // ── Daily snapshot — store one NW data point per day ─────
+  useEffect(() => {
+    if (!nw || nw <= 0) return;
+    const todayLabel = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const stored = safeGet("gat_daily_snapshots", []);
+    const alreadyToday = stored.some(s => s.week === todayLabel);
+    if (!alreadyToday) {
+      const prev = stored.length > 0 ? stored[stored.length - 1].total : null;
+      const next = [...stored, { week: todayLabel, total: nw, prev }];
+      // Keep last 90 days max
+      const trimmed = next.slice(-90);
+      safeSet("gat_daily_snapshots", trimmed);
+      // Merge into perfData so chart updates
+      setPerfData(prev => {
+        const existing = new Set(prev.map(p => p.week));
+        const newPts = trimmed.filter(p => !existing.has(p.week));
+        return newPts.length > 0 ? [...prev, ...newPts] : prev;
+      });
+    }
+  }, [nw]);
+
   // ── TOM Project state ─────────────────────────────────────
   const [tomData, setTomData] = useState(() => safeGet("gat_tom", {
     status: "planning",
@@ -1491,9 +1512,10 @@ export default function GATControlRoom() {
                 </Body>
               )}
               {/* Table header */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 55px 70px",
+              <div style={{ display: "grid",
+                gridTemplateColumns: isMobile ? "1fr 70px 65px" : "1fr 80px 70px 55px 70px",
                 gap: 8, padding: "6px 10px", borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
-                {["Agent","Balance","Status","Trades","P&L"].map(h => (
+                {(isMobile ? ["Agent","Bal","Mode"] : ["Agent","Balance","Status","Trades","P&L"]).map(h => (
                   <p key={h} style={{ fontSize: 10, color: C.textMuted, fontFamily: sans,
                     letterSpacing: "0.07em", textTransform: "uppercase", margin: 0,
                     textAlign: h === "Agent" ? "left" : "right" }}>{h}</p>
@@ -1513,19 +1535,27 @@ export default function GATControlRoom() {
                     border: pos ? `1px solid ${C.yellow}30` : "none" }}>
                     {/* Main agent row */}
                     <div style={{ display: "grid",
-                      gridTemplateColumns: "1fr 80px 70px 55px 70px",
+                      gridTemplateColumns: isMobile ? "1fr 70px 65px" : "1fr 80px 70px 55px 70px",
                       gap: 8, padding: "10px 10px" }}>
-                      <p style={{ fontSize: 13, color: pos ? C.yellow : C.white, fontFamily: mono, margin: 0, fontWeight: 600, alignSelf: "center" }}>{ag.name}</p>
-                      <p style={{ fontSize: 13, color: C.white, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>${balance.toFixed(2)}</p>
+                      {/* Agent name — on mobile, stacks trades+pnl below */}
+                      <div style={{ alignSelf: "center" }}>
+                        <p style={{ fontSize: isMobile ? 11 : 13, color: pos ? C.yellow : C.white, fontFamily: mono, margin: 0, fontWeight: 600 }}>{ag.name}</p>
+                        {isMobile && (
+                          <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: "2px 0 0" }}>
+                            {ag.trades ?? 0} trades · {(ag.pnl || 0) >= 0 ? "+" : ""}{fmt(ag.pnl || 0)}
+                          </p>
+                        )}
+                      </div>
+                      <p style={{ fontSize: isMobile ? 11 : 13, color: C.white, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>${balance.toFixed(2)}</p>
                       <div style={{ textAlign: "right", alignSelf: "center" }}>
-                        <p style={{ fontSize: 11, color: modeColor, fontFamily: sans, margin: 0, fontWeight: 600 }}>{ag.mode}</p>
+                        <p style={{ fontSize: isMobile ? 10 : 11, color: modeColor, fontFamily: sans, margin: 0, fontWeight: 600 }}>{ag.mode}</p>
                         {ag.mode === "CANDIDATE_FOUND" && (
                           <p style={{ fontSize: 9, color: C.textMuted, fontFamily: sans, margin: "1px 0 0",
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>V3.2 — no trade</p>
                         )}
                       </div>
-                      <p style={{ fontSize: 13, color: C.textMuted, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>{ag.trades ?? 0}</p>
-                      {pos && (pos.pnl_pct !== 0 || pos.unrealized_pnl !== 0) ? (
+                      {!isMobile && <p style={{ fontSize: 13, color: C.textMuted, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>{ag.trades ?? 0}</p>}
+                      {!isMobile && (pos && (pos.pnl_pct !== 0 || pos.unrealized_pnl !== 0) ? (
                         <div style={{ textAlign: "right", alignSelf: "center" }}>
                           <p style={{ fontSize: 12, color: C.yellow, fontFamily: mono, margin: 0, fontWeight: 600 }}>
                             {pos.pnl_pct >= 0 ? "+" : ""}{pos.pnl_pct.toFixed(2)}%
@@ -1538,7 +1568,7 @@ export default function GATControlRoom() {
                         <p style={{ fontSize: 13, color: (ag.pnl || 0) >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>
                           {(ag.pnl || 0) >= 0 ? "+" : ""}{fmt(ag.pnl || 0)}
                         </p>
-                      )}
+                      ))}
                     </div>
                     {/* Position sub-row — only when a position is open */}
                     {pos && (
@@ -1557,6 +1587,18 @@ export default function GATControlRoom() {
                           );
                         })()}
                         <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Size ${pos.size.toFixed(0)}</p>
+                        {(() => {
+                          const liveP = pos.address ? dexPrices[pos.address] : null;
+                          const nowPrice = liveP ?? (pos.current > 0 ? pos.current : null);
+                          if (!nowPrice || !pos.entry) return null;
+                          const pct = ((nowPrice - pos.entry) / pos.entry) * 100;
+                          return (
+                            <p style={{ fontSize: 11, fontWeight: 600, fontFamily: mono, margin: 0,
+                              color: pct >= 0 ? C.greenText : C.red }}>
+                              P&L: {pct >= 0 ? "+" : ""}{pct.toFixed(2)}%
+                            </p>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -1691,7 +1733,7 @@ export default function GATControlRoom() {
 
               const displayStatus = hasCheckData
                 ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : cr.passed > 0 ? "ALL SYSTEMS GO" : "Awaiting check data")
-                : (hasLive ? (hasError ? "FAILURES" : "ALL SYSTEMS GO") : sysCheckData.status);
+                : (hasLive ? (hasError ? "FAILURES" : "Awaiting check data") : sysCheckData.status);
 
               const displayTimestamp = hasCheckData
                 ? `Last check: ${cr.checkedAt}`
