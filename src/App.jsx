@@ -1092,7 +1092,7 @@ export default function GATControlRoom() {
           <div style={{ display: "flex", alignItems: "center",
             justifyContent: "space-between", height: isMobile ? 50 : 58 }}>
             {/* Logo */}
-            <svg viewBox="20 58 397 120" style={{ height: isMobile ? 38 : 44, width: "auto", flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="20 58 397 145" style={{ height: isMobile ? 48 : 60, width: "auto", flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="ll_gg" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#00E676"/>
@@ -1140,7 +1140,8 @@ export default function GATControlRoom() {
               <rect x="335" y="75" width="64" height="13" rx="4" fill="url(#ll_gg)"/>
               <rect x="361" y="75" width="13" height="64" rx="4" fill="url(#ll_gg)"/>
               {/* Tagline */}
-              <text x="217" y="172" fontFamily="'Courier New', monospace" fontSize="13" letterSpacing="3" fill="#00E676" opacity="0.65" textAnchor="middle">GROWTH AUTONOMOUS TRADING</text>
+              <line x1="22" y1="162" x2="412" y2="162" stroke="#00E676" strokeWidth="0.5" opacity="0.3"/>
+              <text x="22" y="195" fontFamily="'Courier New', monospace" fontSize="28" textLength="390" lengthAdjust="spacingAndGlyphs" fill="#00E676" opacity="0.75">GROWTH AUTONOMOUS TRADING</text>
             </svg>
 
             {/* Net worth */}
