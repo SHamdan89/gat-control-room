@@ -1152,7 +1152,7 @@ export default function GATControlRoom() {
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                   {wkChg !== 0 && <Badge color={C.greenText}>{fmtP(wkChgPct)} this week</Badge>}
                   <Badge color={investmentGain >= 0 ? C.greenText : C.red}>
-                    Overall: {investmentGain >= 0 ? "+" : ""}{fmtP(investmentGainPct)}
+                    Overall: {fmtP(investmentGainPct)}
                   </Badge>
                 </div>
               } />
@@ -1378,8 +1378,8 @@ export default function GATControlRoom() {
             <div style={{ display: "grid", gridTemplateColumns: g3, gap: 14 }}>
               <Card highlight>
                 <SLabel>Fleet Capital</SLabel>
-                <BigNum size={kpiSize}>{fmt(sgatData.deployed)}</BigNum>
-                <Body size={11} color={C.textMuted}>across 6 agents</Body>
+                <BigNum size={kpiSize}>{sgatData.fleetTotal != null ? fmt(sgatData.fleetTotal) : fmt(sgatData.deployed)}</BigNum>
+                <Body size={11} color={C.textMuted}>across 10 agents</Body>
               </Card>
               <Card style={{ background: sgatData.pnl >= 0 ? C.greenDim : C.redDim, border: `1px solid ${sgatData.pnl >= 0 ? C.green : C.red}20` }}>
                 <SLabel>Total P&L</SLabel>
@@ -1478,7 +1478,7 @@ export default function GATControlRoom() {
               ).map((ag, i) => {
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
-                const balance = pos ? pos.total_wallet : (ag.usdc || 0);
+                const balance = pos ? (pos.total_wallet > 0 ? pos.total_wallet : ag.usdc || 0) : (ag.usdc || 0);
                 return (
                   <div key={i} style={{
                     background: i % 2 === 0 ? C.surfaceAlt : "transparent",
@@ -1498,7 +1498,7 @@ export default function GATControlRoom() {
                         )}
                       </div>
                       <p style={{ fontSize: 13, color: C.textMuted, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>{ag.trades ?? 0}</p>
-                      {pos ? (
+                      {pos && (pos.pnl_pct !== 0 || pos.unrealized_pnl !== 0) ? (
                         <div style={{ textAlign: "right", alignSelf: "center" }}>
                           <p style={{ fontSize: 12, color: C.yellow, fontFamily: mono, margin: 0, fontWeight: 600 }}>
                             {pos.pnl_pct >= 0 ? "+" : ""}{pos.pnl_pct.toFixed(2)}%
@@ -1518,8 +1518,8 @@ export default function GATControlRoom() {
                       <div style={{ display: "flex", gap: 16, padding: "4px 10px 8px 10px",
                         borderTop: `1px solid ${C.yellow}20`, flexWrap: "wrap" }}>
                         <p style={{ fontSize: 11, color: C.yellow, fontFamily: mono, margin: 0, fontWeight: 600 }}>{pos.symbol}</p>
-                        <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Entry ${pos.entry.toLocaleString("en-US", { maximumFractionDigits: 0 })}</p>
-                        <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Now ${pos.current.toLocaleString("en-US", { maximumFractionDigits: 0 })}</p>
+                        <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Entry ${pos.entry < 1 ? pos.entry.toFixed(6) : pos.entry.toLocaleString("en-US", { maximumFractionDigits: 2 })}</p>
+                        <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Now ${pos.current < 1 ? pos.current.toFixed(6) : pos.current.toLocaleString("en-US", { maximumFractionDigits: 2 })}</p>
                         <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Size ${pos.size.toFixed(0)}</p>
                       </div>
                     )}
@@ -1529,7 +1529,7 @@ export default function GATControlRoom() {
               <Hr />
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px" }}>
                 <Body size={12} color={C.textMuted}>Fleet total</Body>
-                <p style={{ fontSize: 13, fontWeight: 700, color: C.white, fontFamily: mono, margin: 0 }}>{fmt(sgatData.deployed)}</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: C.white, fontFamily: mono, margin: 0 }}>{sgatData.fleetTotal != null ? fmt(sgatData.fleetTotal) : fmt(sgatData.deployed)}</p>
               </div>
               {/* SCAN log row */}
               {sgatData.scan && (
@@ -1654,7 +1654,7 @@ export default function GATControlRoom() {
                 : (hasLive ? (hasError ? sgatData.agents.filter(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase())).length : 0) : sysCheckData.failed);
 
               const displayStatus = hasCheckData
-                ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : "ALL SYSTEMS GO")
+                ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : cr.passed > 0 ? "ALL SYSTEMS GO" : "Waiting for report")
                 : (hasLive ? (hasError ? "FAILURES" : "ALL SYSTEMS GO") : sysCheckData.status);
 
               const displayTimestamp = hasCheckData
@@ -1977,7 +1977,7 @@ export default function GATControlRoom() {
               </Body>
               {/* Status tracker */}
               {[
-                { key: "not_started", label: "Not Started" },
+                { key: "not_started", label: "Foundation" },
                 { key: "planning",    label: "Planning"    },
                 { key: "building",    label: "Building"    },
                 { key: "testing",     label: "Testing"     },
@@ -2059,8 +2059,10 @@ export default function GATControlRoom() {
         )}
 
         {tab === "mgat" && (
-          <Card>
-            <MGATLocked />
+          <Card style={{ textAlign: "center", padding: "48px 24px" }}>
+            <p style={{ fontSize: 40, margin: "0 0 12px" }}>🔒</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: C.white, fontFamily: mono, margin: "0 0 8px" }}>MGAT — Coming Soon</p>
+            <p style={{ fontSize: 13, color: C.textMuted, fontFamily: sans, margin: 0 }}>Gated on SGAT Phase 1 completion</p>
           </Card>
         )}
 
@@ -2193,8 +2195,8 @@ export default function GATControlRoom() {
                       </p>
                     )}
                   </div>
-                  <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: "0 0 10px" }}>
-                    Doc ID: 1gDBKZqLP6szncoKh4E5LD2p7LYCVly8gB0yqwfhqvYA
+                  <p style={{ fontSize: 11, color: C.greenText, fontFamily: mono, margin: "0 0 10px" }}>
+                    Connected ✅
                   </p>
                   {sgatData.agents.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
