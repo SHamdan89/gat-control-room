@@ -372,6 +372,7 @@ const parseSGATReport = (text, current) => {
         const upnlM    = pp[4]?.match(/\([-+]?\$?([\d.]+)\)/);
         const upnlSign = (pp[4] || "").includes("(-") ? -1 : 1;
         const walletM  = pp[5]?.match(/([\d.]+)/);
+        const caM = pp[6]?.match(/CA[:\s]+([A-Za-z0-9]{20,})/i) || pp[5]?.match(/CA[:\s]+([A-Za-z0-9]{20,})/i);
         position = {
           symbol:         symbolM ? symbolM[1]                        : "",
           entry:          entryM  ? parseFloat(entryM[1])             : 0,
@@ -380,6 +381,7 @@ const parseSGATReport = (text, current) => {
           pnl_pct:        pctM    ? parseFloat(pctM[1])               : 0,
           unrealized_pnl: upnlM  ? upnlSign * parseFloat(upnlM[1])   : 0,
           total_wallet:   walletM ? parseFloat(walletM[1])            : 0,
+          address:        caM     ? caM[1]                            : null,
         };
       }
 
@@ -729,6 +731,7 @@ export default function GATControlRoom() {
   const [quantities,  setQuantities]  = useState(() => safeGet("gat_quantities",  { goldOz: 32.1507, btcAmount: 1 }));
   const [finnhubKey,  setFinnhubKey]  = useState(() => localStorage.getItem("gat_fhkey") || "");
   const [livePrices,  setLivePrices]  = useState(() => safeGet("gat_livePrices",  {}));
+  const [dexPrices,   setDexPrices]   = useState({});  // keyed by contract address
   const [priceStatus, setPriceStatus] = useState("idle"); // "loading" | "ok" | "error"
 
   useEffect(() => { safeSet("gat_quantities", quantities); }, [quantities]);
@@ -805,6 +808,30 @@ export default function GATControlRoom() {
     const id = setInterval(fetchFleetData, 60000);
     return () => clearInterval(id);
   }, [fetchFleetData]);
+
+  // ── DexScreener live price fetch for held tokens with zero current price ──
+  useEffect(() => {
+    const addrs = sgatData.agents
+      .map(a => a.position?.address)
+      .filter(a => a && a.length > 10);
+    if (addrs.length === 0) return;
+    let cancelled = false;
+    Promise.all(addrs.map(addr =>
+      fetch(`https://api.dexscreener.com/latest/dex/tokens/${addr}`, { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          const price = data?.pairs?.[0]?.priceUsd ? parseFloat(data.pairs[0].priceUsd) : null;
+          return { addr, price };
+        })
+        .catch(() => ({ addr, price: null }))
+    )).then(results => {
+      if (cancelled) return;
+      const next = {};
+      results.forEach(({ addr, price }) => { if (price != null) next[addr] = price; });
+      if (Object.keys(next).length > 0) setDexPrices(prev => ({ ...prev, ...next }));
+    });
+    return () => { cancelled = true; };
+  }, [sgatData.agents]);
 
   // ── Live stocks (computed from share counts × live prices) ─
   const liveStocksData = useMemo(() => {
@@ -1519,7 +1546,16 @@ export default function GATControlRoom() {
                         borderTop: `1px solid ${C.yellow}20`, flexWrap: "wrap" }}>
                         <p style={{ fontSize: 11, color: C.yellow, fontFamily: mono, margin: 0, fontWeight: 600 }}>{pos.symbol}</p>
                         <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Entry ${pos.entry < 1 ? pos.entry.toFixed(6) : pos.entry.toLocaleString("en-US", { maximumFractionDigits: 2 })}</p>
-                        <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Now ${pos.current < 1 ? pos.current.toFixed(6) : pos.current.toLocaleString("en-US", { maximumFractionDigits: 2 })}</p>
+                        {(() => {
+                          const liveP = pos.address ? dexPrices[pos.address] : null;
+                          const displayP = liveP ?? (pos.current > 0 ? pos.current : null);
+                          return (
+                            <p style={{ fontSize: 11, color: liveP ? C.greenText : C.textMuted, fontFamily: mono, margin: 0 }}>
+                              Now {displayP != null ? `$${displayP < 1 ? displayP.toFixed(6) : displayP.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}
+                              {liveP && <span style={{ fontSize: 9, color: C.greenText, marginLeft: 3 }}>●</span>}
+                            </p>
+                          );
+                        })()}
                         <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>Size ${pos.size.toFixed(0)}</p>
                       </div>
                     )}
@@ -1654,7 +1690,7 @@ export default function GATControlRoom() {
                 : (hasLive ? (hasError ? sgatData.agents.filter(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase())).length : 0) : sysCheckData.failed);
 
               const displayStatus = hasCheckData
-                ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : cr.passed > 0 ? "ALL SYSTEMS GO" : "Waiting for report")
+                ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : cr.passed > 0 ? "ALL SYSTEMS GO" : "Awaiting check data")
                 : (hasLive ? (hasError ? "FAILURES" : "ALL SYSTEMS GO") : sysCheckData.status);
 
               const displayTimestamp = hasCheckData
@@ -1691,7 +1727,7 @@ export default function GATControlRoom() {
               )}
 
               {/* Overall status banner */}
-              {displayStatus && (
+              {displayStatus === "ALL SYSTEMS GO" || displayStatus === "WARNINGS" || displayStatus === "FAILURES" ? (
                 <div style={{
                   padding: "10px 14px", marginBottom: 14, borderRadius: 10,
                   background: displayStatus === "ALL SYSTEMS GO" ? C.greenDim
@@ -1706,6 +1742,13 @@ export default function GATControlRoom() {
                   }}>
                     {displayStatus === "ALL SYSTEMS GO" ? "✅" : displayStatus === "WARNINGS" ? "⚠" : "❌"}{" "}
                     {displayStatus}
+                  </p>
+                </div>
+              ) : displayStatus && (
+                <div style={{ padding: "10px 14px", marginBottom: 14, borderRadius: 10,
+                  background: C.surfaceAlt, border: `1px solid ${C.border}` }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, margin: 0, fontFamily: mono, color: C.textMuted }}>
+                    ⏳ {displayStatus}
                   </p>
                 </div>
               )}
