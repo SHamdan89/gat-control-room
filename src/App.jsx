@@ -889,27 +889,49 @@ export default function GATControlRoom() {
   // ── Auto-fetch check_results.json from Google Drive ───────
   // FILE_ID set once after running ~/sgat/sync_check_to_drive.js on the Mac Mini
   const CHECK_RESULTS_DRIVE_ID = '1FEnlk1wK45An9zIjXBWujpYAM3h4iU-_xgxTC-2u7bY';
-  const checkResultsUrl = `https://docs.google.com/document/d/${CHECK_RESULTS_DRIVE_ID}/export?format=txt`;
+  // checkResultsUrl is now handled inside fetchCheckResults with fallback logic
+
+  const parseCheckText = (text) => {
+    const passedM   = text.match(/PASSED[:\s]+(\d+)/i);
+    const failedM   = text.match(/FAILED[:\s]+(\d+)/i);
+    const warningsM = text.match(/WARNINGS?[:\s]+(\d+)/i);
+    if (!passedM) return null;
+    const passed   = parseInt(passedM[1]);
+    const failed   = failedM   ? parseInt(failedM[1])   : 0;
+    const warnings = warningsM ? parseInt(warningsM[1]) : 0;
+    const status   = failed > 0 ? "FAILURES" : warnings > 0 ? "WARNINGS" : passed > 0 ? "ALL SYSTEMS GO" : "Awaiting check data";
+    const tsM = text.match(/TIMESTAMP[:\s]+([^\n]+)/i);
+    const ts  = tsM ? new Date(tsM[1].trim()).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return { passed, warnings, failed, status, timestamp: ts };
+  };
 
   const fetchCheckResults = useCallback(async () => {
-    try {
-      const r = await fetch(checkResultsUrl, { cache: "no-store" });
-      if (!r.ok) return;
-      const text = await r.text();
-      // Parse text format: "PASSED: 38\nFAILED: 0\nWARNINGS: 0\nTIMESTAMP: ..."
-      const passedM   = text.match(/PASSED[:\s]+(\d+)/i);
-      const failedM   = text.match(/FAILED[:\s]+(\d+)/i);
-      const warningsM = text.match(/WARNINGS?[:\s]+(\d+)/i);
-      if (!passedM) return;
-      const passed   = parseInt(passedM[1]);
-      const failed   = failedM   ? parseInt(failedM[1])   : 0;
-      const warnings = warningsM ? parseInt(warningsM[1]) : 0;
-      const status   = failed > 0 ? "FAILURES" : warnings > 0 ? "WARNINGS" : passed > 0 ? "ALL SYSTEMS GO" : "Awaiting check data";
-      const tsM = text.match(/TIMESTAMP[:\s]+([^\n]+)/i);
-      const ts  = tsM ? new Date(tsM[1].trim()).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-      setSysCheckData({ passed, warnings, failed, status, timestamp: ts });
-    } catch { /* silent — show stale data */ }
-  }, [checkResultsUrl]);
+    const FILE_ID   = CHECK_RESULTS_DRIVE_ID;
+    const urlsToTry = [
+      // Docs export — works if file is a Google Doc
+      `https://docs.google.com/document/d/${FILE_ID}/export?format=txt`,
+      // Direct download — works for regular Drive files (may need CORS)
+      `https://drive.google.com/uc?export=download&id=${FILE_ID}`,
+    ];
+    for (const url of urlsToTry) {
+      try {
+        console.log("[GAT syscheck] Trying:", url);
+        const r = await fetch(url, { cache: "no-store" });
+        console.log("[GAT syscheck] HTTP", r.status, "from", url);
+        if (!r.ok) { console.warn("[GAT syscheck] Not OK, trying next"); continue; }
+        const text = await r.text();
+        console.log("[GAT syscheck] Response (first 120 chars):", text.slice(0, 120));
+        const parsed = parseCheckText(text);
+        if (!parsed) { console.warn("[GAT syscheck] No PASSED line found in response"); continue; }
+        console.log("[GAT syscheck] Parsed:", parsed);
+        setSysCheckData(parsed);
+        return; // success
+      } catch(e) {
+        console.warn("[GAT syscheck] Fetch error for", url, "—", e.message);
+      }
+    }
+    console.error("[GAT syscheck] All URLs failed — counters staying at last known value");
+  }, [CHECK_RESULTS_DRIVE_ID]);
 
   useEffect(() => {
     fetchCheckResults();
