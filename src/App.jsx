@@ -886,6 +886,37 @@ export default function GATControlRoom() {
   useEffect(() => { safeSet("gat_syscheck", sysCheckData); }, [sysCheckData]);
   useEffect(() => { try { localStorage.setItem("gat_sysraw", sysRaw); } catch {} }, [sysRaw]);
 
+  // ── Auto-fetch check_results.json from Google Drive ───────
+  // FILE_ID set once after running ~/sgat/sync_check_to_drive.js on the Mac Mini
+  const CHECK_RESULTS_DRIVE_ID = "REPLACE_WITH_DRIVE_FILE_ID";
+  const checkResultsUrl = CHECK_RESULTS_DRIVE_ID !== "REPLACE_WITH_DRIVE_FILE_ID"
+    ? `https://drive.google.com/uc?export=download&id=${CHECK_RESULTS_DRIVE_ID}`
+    : null;
+
+  const fetchCheckResults = useCallback(async () => {
+    if (!checkResultsUrl) return;
+    try {
+      const r = await fetch(checkResultsUrl, { cache: "no-store" });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (typeof data.passed !== "number") return;
+      const status = data.failed > 0   ? "FAILURES"
+                   : data.warnings > 0 ? "WARNINGS"
+                   : data.all_systems_go ? "ALL SYSTEMS GO"
+                   : "Awaiting check data";
+      const ts = data.timestamp
+        ? new Date(data.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+        : "";
+      setSysCheckData({ passed: data.passed, warnings: data.warnings ?? 0, failed: data.failed ?? 0, status, timestamp: ts });
+    } catch { /* silent — show stale data */ }
+  }, [checkResultsUrl]);
+
+  useEffect(() => {
+    fetchCheckResults();
+    const id = setInterval(fetchCheckResults, 5 * 60 * 1000); // every 5 min
+    return () => clearInterval(id);
+  }, [fetchCheckResults]);
+
   // ── Daily snapshot — store one NW data point per day ─────
   useEffect(() => {
     if (!nw || nw <= 0) return;
@@ -1723,22 +1754,25 @@ export default function GATControlRoom() {
               const hasLive     = sgatData.agents.length > 0;
               const hasError    = hasLive && sgatData.agents.some(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase()));
 
-              // Use parsed check_results from Drive report when available
+              // Priority: 1) fleet Drive doc, 2) check_results Drive file, 3) agent error fallback
               const cr = sgatData.checkResults;
               const hasCheckData = !!cr;
+              const hasSysData   = sysCheckData.passed > 0 || sysCheckData.failed > 0 || sysCheckData.warnings > 0 || !!sysCheckData.status;
 
               const displayPassed   = hasCheckData ? cr.passed   : sysCheckData.passed;
               const displayWarnings = hasCheckData ? cr.warnings : sysCheckData.warnings;
               const displayFailed   = hasCheckData ? cr.failed
-                : (hasLive ? (hasError ? sgatData.agents.filter(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase())).length : 0) : sysCheckData.failed);
+                : (hasSysData ? sysCheckData.failed
+                  : (hasLive && hasError ? sgatData.agents.filter(a => ["ERROR","FAILED","ERR"].includes(a.mode?.toUpperCase())).length : 0));
 
               const displayStatus = hasCheckData
                 ? (cr.failed > 0 ? "FAILURES" : cr.warnings > 0 ? "WARNINGS" : cr.passed > 0 ? "ALL SYSTEMS GO" : "Awaiting check data")
-                : (hasLive ? (hasError ? "FAILURES" : "Awaiting check data") : sysCheckData.status);
+                : (hasSysData ? sysCheckData.status
+                  : (hasLive ? (hasError ? "FAILURES" : "Awaiting check data") : "Awaiting check data"));
 
               const displayTimestamp = hasCheckData
                 ? `Last check: ${cr.checkedAt}`
-                : (fleetLastFetched ? `Fleet: ${fleetLastFetched}` : sysCheckData.timestamp || null);
+                : (sysCheckData.timestamp ? `Last check: ${sysCheckData.timestamp}` : (fleetLastFetched ? `Fleet: ${fleetLastFetched}` : null));
 
               return (
             <Card>
@@ -1816,8 +1850,10 @@ export default function GATControlRoom() {
 
               <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: "12px 0 0" }}>
                 {hasCheckData
-                  ? `Counts from Drive report — auto-refreshed every 60s`
-                  : `Waiting for check report · Mac Mini writes at 06:45 Bahrain`}
+                  ? `Counts from fleet report — auto-refreshed every 60s`
+                  : hasSysData
+                  ? `From Mac Mini check_results.json — refreshed every 5 min`
+                  : `Waiting for check report · run sync_check_to_drive.js on Mac Mini`}
               </p>
             </Card>
               );
