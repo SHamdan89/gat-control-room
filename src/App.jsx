@@ -888,13 +888,10 @@ export default function GATControlRoom() {
 
   // ── Auto-fetch check_results.json from Google Drive ───────
   // FILE_ID set once after running ~/sgat/sync_check_to_drive.js on the Mac Mini
-  const CHECK_RESULTS_DRIVE_ID = "REPLACE_WITH_DRIVE_FILE_ID";
-  const checkResultsUrl = CHECK_RESULTS_DRIVE_ID !== "REPLACE_WITH_DRIVE_FILE_ID"
-    ? `https://drive.google.com/uc?export=download&id=${CHECK_RESULTS_DRIVE_ID}`
-    : null;
+  const CHECK_RESULTS_DRIVE_ID = '1FEnlk1wK45An9zIjXBWujpYAM3h4iU-_xgxTC-2u7bY';
+  const checkResultsUrl = `https://drive.google.com/uc?export=download&id=${CHECK_RESULTS_DRIVE_ID}`;
 
   const fetchCheckResults = useCallback(async () => {
-    if (!checkResultsUrl) return;
     try {
       const r = await fetch(checkResultsUrl, { cache: "no-store" });
       if (!r.ok) return;
