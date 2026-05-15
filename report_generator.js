@@ -35,9 +35,17 @@ async function writeCheckResultsToDrive() {
     process.exit(1);
   }
 
-  const raw       = fs.readFileSync(CHECK_JSON_PATH, 'utf8');
-  const parsed    = JSON.parse(raw);           // validate it's real JSON
-  const content   = JSON.stringify(parsed, null, 2);
+  const raw    = fs.readFileSync(CHECK_JSON_PATH, 'utf8');
+  const parsed = JSON.parse(raw);           // validate it's real JSON
+
+  // Write as plain text so the Docs export URL returns CORS-safe content
+  const textContent = [
+    `PASSED: ${parsed.passed}`,
+    `FAILED: ${parsed.failed}`,
+    `WARNINGS: ${parsed.warnings ?? 0}`,
+    `STATUS: ${parsed.all_systems_go ? 'ALL SYSTEMS GO' : parsed.failed > 0 ? 'FAILURES' : 'WARNINGS'}`,
+    `TIMESTAMP: ${parsed.timestamp}`,
+  ].join('\n');
 
   const auth = new google.auth.GoogleAuth({
     keyFile: KEY_FILE,
@@ -50,8 +58,8 @@ async function writeCheckResultsToDrive() {
   await drive.files.update({
     fileId: CHECK_FILE_ID,
     media:  {
-      mimeType: 'application/json',
-      body:     Readable.from([content]),
+      mimeType: 'text/plain',
+      body:     Readable.from([textContent]),
     },
   });
 

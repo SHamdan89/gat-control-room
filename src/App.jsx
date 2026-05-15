@@ -889,22 +889,25 @@ export default function GATControlRoom() {
   // ── Auto-fetch check_results.json from Google Drive ───────
   // FILE_ID set once after running ~/sgat/sync_check_to_drive.js on the Mac Mini
   const CHECK_RESULTS_DRIVE_ID = '1FEnlk1wK45An9zIjXBWujpYAM3h4iU-_xgxTC-2u7bY';
-  const checkResultsUrl = `https://drive.google.com/uc?export=download&id=${CHECK_RESULTS_DRIVE_ID}`;
+  const checkResultsUrl = `https://docs.google.com/document/d/${CHECK_RESULTS_DRIVE_ID}/export?format=txt`;
 
   const fetchCheckResults = useCallback(async () => {
     try {
       const r = await fetch(checkResultsUrl, { cache: "no-store" });
       if (!r.ok) return;
-      const data = await r.json();
-      if (typeof data.passed !== "number") return;
-      const status = data.failed > 0   ? "FAILURES"
-                   : data.warnings > 0 ? "WARNINGS"
-                   : data.all_systems_go ? "ALL SYSTEMS GO"
-                   : "Awaiting check data";
-      const ts = data.timestamp
-        ? new Date(data.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
-        : "";
-      setSysCheckData({ passed: data.passed, warnings: data.warnings ?? 0, failed: data.failed ?? 0, status, timestamp: ts });
+      const text = await r.text();
+      // Parse text format: "PASSED: 38\nFAILED: 0\nWARNINGS: 0\nTIMESTAMP: ..."
+      const passedM   = text.match(/PASSED[:\s]+(\d+)/i);
+      const failedM   = text.match(/FAILED[:\s]+(\d+)/i);
+      const warningsM = text.match(/WARNINGS?[:\s]+(\d+)/i);
+      if (!passedM) return;
+      const passed   = parseInt(passedM[1]);
+      const failed   = failedM   ? parseInt(failedM[1])   : 0;
+      const warnings = warningsM ? parseInt(warningsM[1]) : 0;
+      const status   = failed > 0 ? "FAILURES" : warnings > 0 ? "WARNINGS" : passed > 0 ? "ALL SYSTEMS GO" : "Awaiting check data";
+      const tsM = text.match(/TIMESTAMP[:\s]+([^\n]+)/i);
+      const ts  = tsM ? new Date(tsM[1].trim()).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+      setSysCheckData({ passed, warnings, failed, status, timestamp: ts });
     } catch { /* silent — show stale data */ }
   }, [checkResultsUrl]);
 
