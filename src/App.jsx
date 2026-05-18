@@ -880,6 +880,12 @@ export default function GATControlRoom() {
   // ── Signal state (persisted) ─────────────────────────────
 
 
+  // ── ATLAS Weekly Signal state ───────────────────────────────
+  const [awsSignal, setAwsSignal] = useState(() => {
+    try { return localStorage.getItem("aws_weekly_signal") || ""; } catch { return ""; }
+  });
+  const [awsSaved,  setAwsSaved]  = useState(false);
+
   // ── System Check state ────────────────────────────────────
   const [sysCheckData, setSysCheckData] = useState(() => safeGet("gat_syscheck", { timestamp: "", passed: 0, warnings: 0, failed: 0, status: "" }));
   const [sysRaw,       setSysRaw]       = useState(() => localStorage.getItem("gat_sysraw") || "");
@@ -1467,6 +1473,20 @@ export default function GATControlRoom() {
             <Card>
               <SHead icon="📊" title="Stock Allocation" />
               <AllocBar items={stocksData.holdings.map(s => ({ name: s.ticker, pct: s.actual }))} />
+            </Card>
+
+            {/* ATLAS Weekly Signal */}
+            <Card>
+              <SHead icon="📡" title="ATLAS Weekly Signal" />
+              {awsSignal.trim()
+                ? <pre style={{ fontFamily: mono, fontSize: 12, color: C.textPrimary,
+                    whiteSpace: "pre-wrap", wordBreak: "break-word",
+                    background: C.surfaceAlt, borderRadius: 10, padding: "14px 16px",
+                    border: `1px solid ${C.border}`, margin: 0, lineHeight: 1.6 }}>
+                    {awsSignal.trim()}
+                  </pre>
+                : <Body size={13} color={C.textMuted}>No signal yet — paste from /AWS</Body>
+              }
             </Card>
 
           </div>
@@ -2432,27 +2452,36 @@ export default function GATControlRoom() {
               </Body>
             </Card>
 
-            {/* Generate briefing */}
-            <Card style={{ background: C.greenDim, border: `1px solid ${C.green}25` }}>
-              <SHead icon="⚡" title="Generate ATLAS Briefing" />
+            {/* ATLAS Weekly Signal input */}
+            <Card>
+              <SHead icon="📡" title="ATLAS Weekly Signal" />
               <Body size={13} color={C.textMuted}>
-                Generates a structured snapshot of all your data. Copy it, paste into your ATLAS
-                conversation, and get your full weekly intelligence and recommendations.
-                      </Body>
+                Paste the compact summary output from /AWS here to save it to the Overview tab.
+              </Body>
               <Hr />
+              <textarea
+                value={awsSignal}
+                onChange={e => setAwsSignal(e.target.value)}
+                placeholder="Paste /AWS compact summary here..."
+                style={{ width: "100%", minHeight: 160, background: C.surfaceAlt,
+                  border: `1px solid ${C.border}`, borderRadius: 10, color: C.textPrimary,
+                  fontFamily: mono, fontSize: 12, padding: "12px 14px",
+                  resize: "vertical", outline: "none", boxSizing: "border-box" }}
+              />
               <button
-                onClick={genBriefing}
-                style={{ width: "100%", padding: "14px",
-                  background: copied ? C.greenDeep : C.green,
+                onClick={() => {
+                  try { localStorage.setItem("aws_weekly_signal", awsSignal); } catch {}
+                  setAwsSaved(true);
+                  setTimeout(() => setAwsSaved(false), 2000);
+                }}
+                style={{ width: "100%", marginTop: 10, padding: "13px",
+                  background: awsSaved ? C.greenDeep : C.green,
                   border: "none", borderRadius: 12, color: "#0B0B09",
                   fontSize: 14, fontWeight: 700, fontFamily: sans,
-                  letterSpacing: "0.02em", boxShadow: `0 4px 20px ${C.greenGlow}`,
-                  transition: "all 0.3s", marginBottom: 10 }}>
-                {copied ? "✓ Copied — Paste into ATLAS" : "⚡ Generate & Copy Briefing"}
+                  letterSpacing: "0.02em", cursor: "pointer",
+                  boxShadow: `0 4px 20px ${C.greenGlow}`, transition: "all 0.3s" }}>
+                {awsSaved ? "✓ Saved" : "Save Signal"}
               </button>
-              <Body size={12} color={C.textMuted}>
-                Open your ATLAS conversation → paste → get weekly signal and recommendations.
-              </Body>
             </Card>
           </div>
         )}
