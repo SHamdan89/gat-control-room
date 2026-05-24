@@ -1501,7 +1501,7 @@ export default function GATControlRoom() {
               <Card highlight>
                 <SLabel>Fleet Capital</SLabel>
                 <BigNum size={kpiSize}>{sgatData.fleetTotal != null ? fmt(sgatData.fleetTotal) : fmt(sgatData.deployed)}</BigNum>
-                <Body size={11} color={C.textMuted}>across 10 agents</Body>
+                <Body size={11} color={C.textMuted}>across 14 agents</Body>
               </Card>
               <Card style={{ background: sgatData.pnl >= 0 ? C.greenDim : C.redDim, border: `1px solid ${sgatData.pnl >= 0 ? C.green : C.red}20` }}>
                 <SLabel>Total P&L</SLabel>
@@ -1597,7 +1597,7 @@ export default function GATControlRoom() {
               </div>
               {(sgatData.agents.length > 0
                 ? sgatData.agents
-                : ["SGAT_SOL","SGAT_BASE","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_wETH","SGAT_BSC_N","SGAT_SUI_N","SGAT_CASH"].map(n => ({ name: n, status: "", mode: n === "SGAT_CASH" ? "FROZEN" : "—", usdc: n === "SGAT_CASH" ? 119 : 0, trades: 0, pnl: 0, position: null }))
+                : ["SGAT_SOL","SGAT_BASE","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_wETH","SGAT_BSC_N","SGAT_SUI_N","SGAT_CASH","SGAT_SOL_BC","SGAT_BASE_BC","SGAT_BSC_BC","SGAT_SUI_BC"].map(n => ({ name: n, status: "", mode: n === "SGAT_CASH" ? "FROZEN" : "—", usdc: n === "SGAT_CASH" ? 119 : 0, trades: 0, pnl: 0, position: null }))
               ).map((ag, i) => {
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
@@ -2493,9 +2493,4 @@ export default function GATControlRoom() {
         </p>
       </div>
 
-      {/* Toast notification */}
-      
-    </div>
-  );
-}
-
+  
