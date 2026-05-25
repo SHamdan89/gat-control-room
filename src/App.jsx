@@ -69,11 +69,10 @@ const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], ma
 const DEFAULT_STOCKS = {
   total: 0, ibkrCash: 265,
   holdings: [
-    { ticker: "TSM",   name: "Taiwan Semi", target: 28, actual: 0, value: 0, shares: 0, weekChange: 0 },
-    { ticker: "GOOGL", name: "Alphabet",    target: 25, actual: 0, value: 0, shares: 0, weekChange: 0 },
-    { ticker: "AVGO",  name: "Broadcom",    target: 20, actual: 0, value: 0, shares: 0, weekChange: 0 },
-    { ticker: "LLY",   name: "Eli Lilly",   target: 15, actual: 0, value: 0, shares: 0, weekChange: 0 },
-    { ticker: "AMD",   name: "AMD",         target: 12, actual: 0, value: 0, shares: 0, weekChange: 0 },
+    { ticker: "NVDA",  name: "NVIDIA",      target: 35, actual: 0, value: 0, shares: 0, weekChange: 0 },
+    { ticker: "INTC",  name: "Intel",       target: 30, actual: 0, value: 0, shares: 0, weekChange: 0 },
+    { ticker: "AMD",   name: "AMD",         target: 25, actual: 0, value: 0, shares: 0, weekChange: 0 },
+    { ticker: "CASH",  name: "Cash",        target: 10, actual: 0, value: 0, shares: 0, weekChange: 0 },
   ]
 };
 
@@ -1561,7 +1560,7 @@ export default function GATControlRoom() {
                       ? <Badge color={C.textMuted}>⟳ Fetching…</Badge>
                       : fleetStatus === "error"
                         ? <Badge color={C.red}>⚠ Fetch error</Badge>
-                        : <Badge color={C.textMuted}>● 10 Active</Badge>
+                        : <Badge color={C.textMuted}>● 14 Active</Badge>
                   }
                   <button
                     onClick={fetchFleetData}
@@ -1952,7 +1951,7 @@ export default function GATControlRoom() {
                 <div style={{ padding: "24px 0", textAlign: "center" }}>
                   <Body size={13} color={C.textMuted}>No positions yet — buy first shares to start tracking</Body>
                   <Body size={12} color={C.textMuted} style={{ marginTop: 6 }}>
-                    Planned: TSM · GOOGL · AVGO · LLY · AMD
+                    Planned: NVDA · INTC · AMD · CASH
                   </Body>
                 </div>
               ) : liveStocksData.holdings.filter(h => h.shares > 0).map((s, i) => (
@@ -2383,7 +2382,7 @@ export default function GATControlRoom() {
               </div>
               <PasteZone
                 icon="📈" label="Stock Portfolio — share quantities from IBKR"
-                hint={`TSM: 8 shares\nGOOGL: 6 shares\nAVGO: 2 shares\nLLY: 1 share\nAMD: 3 shares\n\n(Prices auto-fetched — no need to paste dollar values)`}
+                hint={`NVDA: 12 shares\nINTC: 8 shares\nAMD: 6 shares\nCASH: as needed\n\n(Prices auto-fetched — no need to paste dollar values)`}
                 value={stk} onChange={setStk}
               />
               <PasteZone
@@ -2493,4 +2492,9 @@ export default function GATControlRoom() {
         </p>
       </div>
 
-  
+      {/* Toast notification */}
+      
+    </div>
+  );
+}
+

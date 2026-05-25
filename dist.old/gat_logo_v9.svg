@@ -1,0 +1,98 @@
+<svg viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ggreen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   style="stop-color:#00E676"/>
+      <stop offset="100%" style="stop-color:#00C853"/>
+    </linearGradient>
+    <linearGradient id="bargreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00E676"/>
+      <stop offset="100%" style="stop-color:#00C853"/>
+    </linearGradient>
+    <filter id="barglow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="arrowglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="520" height="220" fill="#1A1A1A"/>
+
+  <!--
+    GRID SYSTEM:
+    Square size: 90x90   rx=10
+    Gap between squares: 10
+    Start x: 22
+    Icon:  x=22
+    G:     x=122
+    A:     x=222
+    T:     x=322
+    All squares: y=62, height=90
+    Inner letter padding: 14px from each edge
+    So letter draws from (x+14, 62+14) to (x+76, 62+76) = 62px wide, 62px tall
+    Stroke bar thickness: 13px
+  -->
+
+  <!-- ===== ICON SQUARE ===== -->
+  <rect x="22" y="62" width="90" height="90" rx="10" fill="#212121"/>
+  <rect x="22" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" stroke-width="1" opacity="0.3"/>
+  <!-- bars -->
+  <rect x="36"  y="116" width="13" height="22" rx="2" fill="#00C853" opacity="0.4"/>
+  <rect x="56"  y="101" width="13" height="37" rx="2" fill="#00E676" opacity="0.65"/>
+  <rect x="76"  y="84"  width="13" height="54" rx="2" fill="url(#bargreen)" filter="url(#barglow)"/>
+  <!-- arrow -->
+  <polyline points="70,78 83,66 96,78" fill="none" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#arrowglow)"/>
+  <line x1="83" y1="66" x2="83" y2="82" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" filter="url(#arrowglow)"/>
+
+  <!-- ===== G SQUARE ===== -->
+  <!-- box -->
+  <rect x="122" y="62" width="90" height="90" rx="10" fill="#212121"/>
+  <rect x="122" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" stroke-width="1" opacity="0.12"/>
+  <!-- G letter — padding 13px, so inner box: x=135..199  y=75..139  (64x64) bar=13px -->
+  <!-- Left vertical full height -->
+  <rect x="135" y="75" width="13" height="64" rx="4" fill="url(#ggreen)"/>
+  <!-- Top bar -->
+  <rect x="135" y="75" width="64" height="13" rx="4" fill="url(#ggreen)"/>
+  <!-- Bottom bar -->
+  <rect x="135" y="126" width="64" height="13" rx="4" fill="url(#ggreen)"/>
+  <!-- Middle bar (right half) -->
+  <rect x="164" y="101" width="35" height="12" rx="4" fill="url(#ggreen)"/>
+  <!-- Right vertical (bottom half only) -->
+  <rect x="186" y="101" width="13" height="38" rx="4" fill="url(#ggreen)"/>
+
+  <!-- ===== A SQUARE ===== -->
+  <rect x="222" y="62" width="90" height="90" rx="10" fill="#212121"/>
+  <rect x="222" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" stroke-width="1" opacity="0.12"/>
+  <!-- A letter — inner box: x=235..299  y=75..139 -->
+  <!-- Left vertical -->
+  <rect x="235" y="75" width="13" height="64" rx="4" fill="url(#ggreen)"/>
+  <!-- Right vertical -->
+  <rect x="286" y="75" width="13" height="64" rx="4" fill="url(#ggreen)"/>
+  <!-- Top bar -->
+  <rect x="235" y="75" width="64" height="13" rx="4" fill="url(#ggreen)"/>
+  <!-- Middle crossbar -->
+  <rect x="235" y="101" width="64" height="12" rx="4" fill="url(#ggreen)"/>
+
+  <!-- ===== T SQUARE ===== -->
+  <rect x="322" y="62" width="90" height="90" rx="10" fill="#212121"/>
+  <rect x="322" y="62" width="90" height="90" rx="10" fill="none" stroke="#00E676" stroke-width="1" opacity="0.12"/>
+  <!-- T letter — inner box: x=335..399  y=75..139 -->
+  <!-- Top bar full width -->
+  <rect x="335" y="75" width="64" height="13" rx="4" fill="url(#ggreen)"/>
+  <!-- Center stem -->
+  <rect x="361" y="75" width="13" height="64" rx="4" fill="url(#ggreen)"/>
+
+  <!-- ===== TAGLINE ===== -->
+  <!-- Full logo spans x=22 to x=412, center = 217 -->
+  <rect x="122" y="163" width="290" height="1.2" rx="1" fill="#00E676" opacity="0.35"/>
+  <text x="267" y="179"
+    font-family="'Courier New', monospace"
+    font-size="8.5"
+    letter-spacing="3.5"
+    fill="#00E676"
+    opacity="0.5"
+    text-anchor="middle">GROWTH AUTONOMOUS TRADING</text>
+
+</svg>
