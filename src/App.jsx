@@ -1665,6 +1665,7 @@ export default function GATControlRoom() {
                 const fleetAgent = fleetStructStatus === "ok" ? sgatFleet.per_agent?.find(fa => fa.agent === ag.name) : null;
                 const agentTrades = fleetAgent?.trades ?? null;
                 const agentAvgPnlPct = fleetAgent?.avg_pnl_pct ?? null;
+                const agentLastUpdated = fleetAgent ? sgatFleet.generated_at : null;
 
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
