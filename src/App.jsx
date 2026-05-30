@@ -895,6 +895,34 @@ export default function GATControlRoom() {
     return { cur, base, pnl: cur - base, pct, n };
   }, [sgatData.agents]);
 
+  // ── SGAT Shadow fleet (paper trades on Hermes strategies) ─────────
+  // Post-trip wiring: sgat_export.js will read ~/sgat/memory/shadow/
+  // trade_history_{chain}_sh.json (5 chains) and emit a `shadow` block in
+  // sgat_fleet.json with the SAME shape as the live fleet:
+  //   sgatFleet.shadow = {
+  //     trade_history: [{ agent, chain, symbol, pnl_pct, reason, note, classification, closed_at }],
+  //     performance?: { trades, winRate, avgPct }   // optional; derived below if absent
+  //   }
+  // Until that block exists the cards show "awaiting shadow export (post-trip)."
+  const shadowFleet = useMemo(() => {
+    const sh = sgatFleet?.shadow || null;
+    const history = Array.isArray(sh?.trade_history) ? sh.trade_history : [];
+    const avail = !!sh && (history.length > 0 || !!sh.performance);
+    // Prefer an explicit performance block; otherwise derive from trade history.
+    let perf = sh?.performance || null;
+    if (!perf && history.length > 0) {
+      const trades = history.length;
+      const wins = history.filter(t => (t.pnl_pct ?? 0) > 0).length;
+      const sum = history.reduce((a, t) => a + (t.pnl_pct ?? 0), 0);
+      perf = {
+        trades,
+        winRate: trades > 0 ? Math.round((wins / trades) * 1000) / 10 : null,
+        avgPct: trades > 0 ? Math.round((sum / trades) * 100) / 100 : null,
+      };
+    }
+    return { avail, history, perf };
+  }, [sgatFleet]);
+
   // ── DexScreener live price fetch for held tokens with zero current price ──
   useEffect(() => {
     const addrs = sgatData.agents
@@ -1898,15 +1926,104 @@ export default function GATControlRoom() {
                 )}
             </Card>
 
-            {/* ── SGAT Shadow Performance ── */}
+            {/* ── SGAT Shadow Fleet Performance ── */}
             <Card>
-              <SHead icon="👻" title="SGAT Shadow Performance" right={<Badge color={C.textMuted}>—</Badge>} />
+              <SHead icon="👻" title="SGAT Shadow Fleet Performance" right={
+                shadowFleet.avail ? <Badge color={C.greenText}>Live</Badge> : <Badge color={C.textMuted}>—</Badge>
+              } />
               <Body size={12} color={C.textSecondary} style={{ marginBottom: 12 }}>
                 Paper trades on Hermes strategies (INFRA/MEAN_REVERSION, DEFI/MOMENTUM, AI/RSI_OVERSOLD, MEME/BREAKOUT). Separate from live fleet.
               </Body>
-              <Body size={12} color={C.yellow}>
-                Awaiting shadow trades — populates after regime exits BEAR and shadow export is wired (post-trip).
-              </Body>
+              {shadowFleet.avail && shadowFleet.perf ? (
+                <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap:10 }}>
+                  {/* Total trades */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>Total Trades</p>
+                    <p style={{ fontSize:24, fontWeight:700, color:C.white, fontFamily:mono, margin:0 }}>
+                      {shadowFleet.perf.trades}
+                    </p>
+                  </div>
+                  {/* Win rate */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>Win Rate</p>
+                    <p style={{ fontSize:24, fontWeight:700, fontFamily:mono, margin:0,
+                      color: shadowFleet.perf.winRate == null ? C.textMuted
+                        : shadowFleet.perf.winRate >= 55 ? C.greenText
+                        : shadowFleet.perf.winRate >= 45 ? C.yellow : C.red }}>
+                      {shadowFleet.perf.winRate != null ? `${shadowFleet.perf.winRate}%` : "—"}
+                    </p>
+                  </div>
+                  {/* Avg Trade */}
+                  <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
+                    <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
+                      textTransform:"uppercase", margin:"0 0 6px" }}>AVG TRADE</p>
+                    <p style={{ fontSize:24, fontWeight:700, fontFamily:mono, margin:0,
+                      color: shadowFleet.perf.avgPct == null ? C.textMuted
+                        : shadowFleet.perf.avgPct >= 0 ? C.greenText : C.red }}>
+                      {shadowFleet.perf.avgPct != null
+                        ? `${shadowFleet.perf.avgPct >= 0 ? "+" : ""}${shadowFleet.perf.avgPct}%`
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <Body size={12} color={C.yellow}>
+                  ⧗ Awaiting shadow export (post-trip).
+                </Body>
+              )}
+            </Card>
+
+            {/* ── SGAT Shadow Fleet History ── */}
+            <Card>
+              <SHead icon="📋" title="SGAT Shadow Fleet History" right={
+                shadowFleet.avail && shadowFleet.history.length > 0
+                  ? <Badge color={C.greenText}>{shadowFleet.history.length} closed</Badge>
+                  : <Badge color={C.textMuted}>—</Badge>
+              } />
+              {shadowFleet.avail && shadowFleet.history.length > 0 ? (
+                <>
+                  <div style={{ display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "70px 55px 60px 55px 60px 100px 60px",
+                    gap: 6, padding: "6px 10px", borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
+                    {(isMobile ? ["Trade"] : ["Agent","Chain","Symbol","P&L %","Reason","Note/Classif","Date"]).map(h => (
+                      <p key={h} style={{ fontSize: 9, color: C.textMuted, fontFamily: sans,
+                        letterSpacing: "0.07em", textTransform: "uppercase", margin: 0 }}>{h}</p>
+                    ))}
+                  </div>
+                  {shadowFleet.history.map((trade, i) => (
+                    <div key={i} style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "70px 55px 60px 55px 60px 100px 60px",
+                      gap: 6, padding: "8px 10px", borderBottom: `1px solid ${C.border}`,
+                      background: i % 2 === 0 ? C.surfaceAlt : "transparent", borderRadius: 6 }}>
+                      <p style={{ fontSize: 11, color: C.textSecondary, fontFamily: mono, margin: 0 }}>{trade.agent}</p>
+                      {!isMobile && <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: 0 }}>{trade.chain}</p>}
+                      {!isMobile && <p style={{ fontSize: 11, color: C.white, fontFamily: mono, margin: 0 }}>{trade.symbol}</p>}
+                      {!isMobile && <p style={{ fontSize: 11, color: (trade.pnl_pct ?? 0) >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
+                        {fmtP(trade.pnl_pct ?? 0)}
+                      </p>}
+                      {!isMobile && <p style={{ fontSize: 10, color: C.yellow, fontFamily: mono, margin: 0 }}>{trade.reason ?? "—"}</p>}
+                      {!isMobile && <p style={{ fontSize: 9, color: trade.classification === "BUG_TAINTED" ? C.red : C.textMuted, fontFamily: mono, margin: 0 }}>
+                        {trade.classification ?? trade.note ?? "—"}
+                      </p>}
+                      {!isMobile && <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: 0 }}>
+                        {trade.closed_at ? new Date(trade.closed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                      </p>}
+                      {isMobile && (
+                        <div style={{ fontSize: 10, color: C.textMuted, fontFamily: mono }}>
+                          {trade.symbol} {trade.chain} · {fmtP(trade.pnl_pct ?? 0)} · {trade.reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <Body size={12} color={C.yellow}>
+                  ⧗ Awaiting shadow export (post-trip).
+                </Body>
+              )}
             </Card>
 
             <Card>
