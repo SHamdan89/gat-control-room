@@ -830,7 +830,8 @@ export default function GATControlRoom() {
     }
     setFleetStructStatus("loading");
     const urlsToTry = [
-      `https://drive.google.com/uc?id=${SGAT_FLEET_FILE_ID}`,  // Direct JSON (no export=download — avoids HTML interstitial)
+      // usercontent endpoint sends Access-Control-Allow-Origin:* — drive.google.com/uc returns 403 on a browser CORS request
+      `https://drive.usercontent.google.com/download?id=${SGAT_FLEET_FILE_ID}`,
     ];
     for (const url of urlsToTry) {
       try {
