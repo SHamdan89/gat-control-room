@@ -830,8 +830,7 @@ export default function GATControlRoom() {
     }
     setFleetStructStatus("loading");
     const urlsToTry = [
-      `https://docs.google.com/document/d/${SGAT_FLEET_FILE_ID}/export?format=txt`,
-      `https://drive.google.com/uc?export=download&id=${SGAT_FLEET_FILE_ID}`,
+      `https://drive.google.com/uc?id=${SGAT_FLEET_FILE_ID}`,  // Direct JSON (no export=download — avoids HTML interstitial)
     ];
     for (const url of urlsToTry) {
       try {
