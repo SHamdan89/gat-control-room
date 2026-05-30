@@ -64,6 +64,16 @@ const DEFAULT_SGAT = { deployed: 0, pnl: 0, pnlPct: 0, trades: 0, agents: [], ma
 // scan shape: [{ chain: "SOL", seen: 30, passed: 0 }, ...]
 // performance shape: { trades: 0, winRate: null, avgPct: null, streak: null }
 
+const DEFAULT_SGAT_FLEET = {
+  lastUpdated: null,
+  agents: [],
+  tradeHistory: [],
+  shadowAgents: [],
+};
+// agents shape: [{ name, trades, realizedPnl, unrealizedPnl, lastUpdatedAt }]
+// tradeHistory shape: [{ agent, symbol, entry, exit, pnlPct, pnl, reason, timestamp }]
+// shadowAgents shape: [{ name, trades, winRate, avgPnl, recentTrades: [...] }]
+
 // Stocks scaled so holdings sum = $164,100
 // Total nw = 164,100 + 18,500 + 42,300 + 22,450 + 100 = $247,450 — matches chart
 const DEFAULT_STOCKS = {
@@ -714,12 +724,14 @@ export default function GATControlRoom() {
 
   // ── Dashboard data (localStorage persisted) ───────────────
   const [sgatData,   setSgatData]   = useState(() => safeGet("gat_sgatData",   DEFAULT_SGAT));
+  const [sgatFleet,  setSgatFleet]  = useState(() => safeGet("gat_sgatFleet",  DEFAULT_SGAT_FLEET));
   const [stocksData, setStocksData] = useState(() => safeGet("gat_stocksData", DEFAULT_STOCKS));
   const [hardAssets, setHardAssets] = useState(() => safeGet("gat_hardAssets", DEFAULT_ASSETS));
   const [perfData,   setPerfData]   = useState(() => safeGet("gat_perfData",   DEFAULT_PERF));
   const [reData,     setReData]     = useState(() => safeGet("gat_reData",     DEFAULT_RE));
 
   useEffect(() => { safeSet("gat_sgatData",   sgatData);   }, [sgatData]);
+  useEffect(() => { safeSet("gat_sgatFleet",  sgatFleet);  }, [sgatFleet]);
   useEffect(() => { safeSet("gat_stocksData", stocksData); }, [stocksData]);
   useEffect(() => { safeSet("gat_hardAssets", hardAssets); }, [hardAssets]);
   useEffect(() => { safeSet("gat_perfData",   perfData);   }, [perfData]);
@@ -781,6 +793,7 @@ export default function GATControlRoom() {
 
   const [fleetStatus,      setFleetStatus]      = useState("idle"); // "idle"|"loading"|"ok"|"error"
   const [fleetLastFetched, setFleetLastFetched] = useState(null);
+  const [fleetStructStatus, setFleetStructStatus] = useState("awaiting"); // "awaiting"|"loading"|"ok"|"error"
 
   const fetchFleetData = useCallback(async () => {
     setFleetStatus("loading");
@@ -807,6 +820,40 @@ export default function GATControlRoom() {
     const id = setInterval(fetchFleetData, 60000);
     return () => clearInterval(id);
   }, [fetchFleetData]);
+
+  // ── Fetch sgat_fleet.json from Google Drive (structured per-agent data) ──
+  // FILE_ID will be set after the structured export is created on Mac Mini
+  const SGAT_FLEET_FILE_ID = null; // "placeholder_file_id_here";
+  const fetchSgatFleet = useCallback(async () => {
+    if (!SGAT_FLEET_FILE_ID) {
+      setFleetStructStatus("awaiting");
+      return;
+    }
+    setFleetStructStatus("loading");
+    const urlsToTry = [
+      `https://docs.google.com/document/d/${SGAT_FLEET_FILE_ID}/export?format=txt`,
+      `https://drive.google.com/uc?export=download&id=${SGAT_FLEET_FILE_ID}`,
+    ];
+    for (const url of urlsToTry) {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) continue;
+        const json = await r.json();
+        setSgatFleet(json);
+        setFleetStructStatus("ok");
+        return;
+      } catch (e) {
+        console.warn("[sgat_fleet] Fetch error for", url, "—", e.message);
+      }
+    }
+    setFleetStructStatus("error");
+  }, [SGAT_FLEET_FILE_ID]);
+
+  useEffect(() => {
+    fetchSgatFleet();
+    const id = setInterval(fetchSgatFleet, 120000); // every 2 min
+    return () => clearInterval(id);
+  }, [fetchSgatFleet]);
 
   // ── DexScreener live price fetch for held tokens with zero current price ──
   useEffect(() => {
@@ -1584,6 +1631,21 @@ export default function GATControlRoom() {
                   ⟳ Loading fleet data from Google Drive…
                 </Body>
               )}
+              {fleetStructStatus === "awaiting" && (
+                <Body size={12} color={C.yellow} style={{ marginBottom: 12 }}>
+                  ⧗ Awaiting per-agent trade data (sgat_fleet.json). Per-agent TRADES and P&L columns show "—" until structured export is available post-trip.
+                </Body>
+              )}
+              {fleetStructStatus === "loading" && (
+                <Body size={12} color={C.textMuted} style={{ marginBottom: 12 }}>
+                  ⟳ Loading per-agent metrics…
+                </Body>
+              )}
+              {fleetStructStatus === "error" && (
+                <Body size={12} color={C.red} style={{ marginBottom: 12 }}>
+                  ⚠ Could not load per-agent metrics. Retrying every 2 minutes.
+                </Body>
+              )}
               {/* Table header */}
               <div style={{ display: "grid",
                 gridTemplateColumns: isMobile ? "1fr 70px 65px" : "1fr 80px 70px 55px 70px",
@@ -1598,6 +1660,14 @@ export default function GATControlRoom() {
                 ? sgatData.agents
                 : ["SGAT_SOL","SGAT_BASE","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_wETH","SGAT_BSC_N","SGAT_SUI_N","SGAT_CASH","SGAT_SOL_BC","SGAT_BASE_BC","SGAT_BSC_BC","SGAT_SUI_BC"].map(n => ({ name: n, status: "", mode: n === "SGAT_CASH" ? "FROZEN" : "—", usdc: n === "SGAT_CASH" ? 119 : 0, trades: 0, pnl: 0, position: null }))
               ).map((ag, i) => {
+                // Merge per-agent data from sgatFleet
+                const fleetAgent = fleetStructStatus === "ok" ? sgatFleet.agents?.find(fa => fa.name === ag.name) : null;
+                const agentTrades = fleetAgent?.trades ?? null;
+                const agentRealizedPnl = fleetAgent?.realizedPnl ?? 0;
+                const agentUnrealizedPnl = fleetAgent?.unrealizedPnl ?? 0;
+                const agentTotalPnl = agentRealizedPnl + agentUnrealizedPnl;
+                const agentLastUpdated = fleetAgent?.lastUpdatedAt;
+
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
                 const balance = pos ? (pos.total_wallet > 0 ? pos.total_wallet : ag.usdc || 0) : (ag.usdc || 0);
@@ -1613,9 +1683,22 @@ export default function GATControlRoom() {
                       {/* Agent name — on mobile, stacks trades+pnl below */}
                       <div style={{ alignSelf: "center" }}>
                         <p style={{ fontSize: isMobile ? 11 : 13, color: pos ? C.yellow : C.white, fontFamily: mono, margin: 0, fontWeight: 600 }}>{ag.name}</p>
+                        {agentLastUpdated && (
+                          <p style={{ fontSize: 8, color: C.textMuted, fontFamily: mono, margin: "1px 0 0" }}>
+                            {(() => {
+                              const ts = new Date(agentLastUpdated);
+                              const now = new Date();
+                              const secAgo = Math.floor((now - ts) / 1000);
+                              if (secAgo < 60) return "now";
+                              if (secAgo < 3600) return Math.floor(secAgo / 60) + "m ago";
+                              if (secAgo < 86400) return Math.floor(secAgo / 3600) + "h ago";
+                              return Math.floor(secAgo / 86400) + "d ago";
+                            })()}
+                          </p>
+                        )}
                         {isMobile && (
                           <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: "2px 0 0" }}>
-                            {ag.trades ?? 0} trades · {(ag.pnl || 0) >= 0 ? "+" : ""}{fmt(ag.pnl || 0)}
+                            {agentTrades !== null ? agentTrades : "—"} trades · {agentTotalPnl >= 0 ? "+" : ""}{fmt(agentTotalPnl)}
                           </p>
                         )}
                       </div>
@@ -1627,8 +1710,23 @@ export default function GATControlRoom() {
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>V3.2 — no trade</p>
                         )}
                       </div>
-                      {!isMobile && <p style={{ fontSize: 13, color: C.textMuted, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>{ag.trades ?? 0}</p>}
-                      {!isMobile && (pos && (pos.pnl_pct !== 0 || pos.unrealized_pnl !== 0) ? (
+                      {!isMobile && (
+                        <p style={{ fontSize: 13, color: agentTrades !== null ? C.textSecondary : C.textMuted, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>
+                          {agentTrades !== null ? agentTrades : "—"}
+                        </p>
+                      )}
+                      {!isMobile && (agentTrades !== null ? (
+                        <div style={{ textAlign: "right", alignSelf: "center" }}>
+                          <p style={{ fontSize: 12, color: agentTotalPnl >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
+                            {agentTotalPnl >= 0 ? "+" : ""}{fmt(agentTotalPnl)}
+                          </p>
+                          {agentRealizedPnl !== 0 && (
+                            <p style={{ fontSize: 9, color: C.textMuted, fontFamily: mono, margin: "1px 0 0" }}>
+                              R: {agentRealizedPnl >= 0 ? "+" : ""}{fmt(agentRealizedPnl)}
+                            </p>
+                          )}
+                        </div>
+                      ) : pos && (pos.pnl_pct !== 0 || pos.unrealized_pnl !== 0) ? (
                         <div style={{ textAlign: "right", alignSelf: "center" }}>
                           <p style={{ fontSize: 12, color: C.yellow, fontFamily: mono, margin: 0, fontWeight: 600 }}>
                             {pos.pnl_pct >= 0 ? "+" : ""}{pos.pnl_pct.toFixed(2)}%
@@ -1708,6 +1806,142 @@ export default function GATControlRoom() {
                   </div>
                 </>
               )}
+            </Card>
+
+            {/* ── SGAT Fleet Trade History ── */}
+            <Card>
+              <SHead icon="📋" title="SGAT Fleet Trade History" right={
+                fleetStructStatus === "ok" && sgatFleet.tradeHistory && sgatFleet.tradeHistory.length > 0
+                  ? <Badge color={C.greenText}>{sgatFleet.tradeHistory.length} closed</Badge>
+                  : <Badge color={C.textMuted}>—</Badge>
+              } />
+              {fleetStructStatus === "awaiting" && (
+                <Body size={12} color={C.yellow} style={{ marginBottom: 12 }}>
+                  ⧗ Awaiting trade history data (sgat_fleet.json). Will populate post-trip from database.
+                </Body>
+              )}
+              {fleetStructStatus === "loading" && (
+                <Body size={12} color={C.textMuted} style={{ marginBottom: 12 }}>
+                  ⟳ Loading trade history…
+                </Body>
+              )}
+              {fleetStructStatus === "ok" && sgatFleet.tradeHistory && sgatFleet.tradeHistory.length > 0 ? (
+                <div style={{ display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "80px 60px 55px 55px 70px 70px 50px 60px",
+                  gap: 8, padding: "6px 10px", borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
+                  {(isMobile ? ["Trade"] : ["Agent","Symbol","Entry","Exit","P&L %","P&L $","Reason","Time"]).map(h => (
+                    <p key={h} style={{ fontSize: 9, color: C.textMuted, fontFamily: sans,
+                      letterSpacing: "0.07em", textTransform: "uppercase", margin: 0 }}>{h}</p>
+                  ))}
+                </div>
+              ) : null}
+              {fleetStructStatus === "ok" && sgatFleet.tradeHistory && sgatFleet.tradeHistory.length > 0
+                ? sgatFleet.tradeHistory.slice().reverse().map((trade, i) => (
+                    <div key={i} style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "80px 60px 55px 55px 70px 70px 50px 60px",
+                      gap: 8, padding: "8px 10px", borderBottom: `1px solid ${C.border}`,
+                      background: i % 2 === 0 ? C.surfaceAlt : "transparent", borderRadius: 6 }}>
+                      <p style={{ fontSize: 11, color: C.textSecondary, fontFamily: mono, margin: 0 }}>{trade.agent}</p>
+                      {!isMobile && <p style={{ fontSize: 11, color: C.white, fontFamily: mono, margin: 0 }}>{trade.symbol}</p>}
+                      {!isMobile && <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>${trade.entry?.toFixed(4) ?? "—"}</p>}
+                      {!isMobile && <p style={{ fontSize: 11, color: C.textMuted, fontFamily: mono, margin: 0 }}>${trade.exit?.toFixed(4) ?? "—"}</p>}
+                      {!isMobile && <p style={{ fontSize: 11, color: (trade.pnlPct ?? 0) >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
+                        {(trade.pnlPct ?? 0) >= 0 ? "+" : ""}{(trade.pnlPct ?? 0).toFixed(2)}%
+                      </p>}
+                      {!isMobile && <p style={{ fontSize: 11, color: (trade.pnl ?? 0) >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
+                        {(trade.pnl ?? 0) >= 0 ? "+" : ""}{fmt(trade.pnl ?? 0)}
+                      </p>}
+                      {!isMobile && <p style={{ fontSize: 10, color: C.yellow, fontFamily: mono, margin: 0 }}>{trade.reason ?? "—"}</p>}
+                      {!isMobile && <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: 0 }}>
+                        {trade.timestamp ? new Date(trade.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                      </p>}
+                      {isMobile && (
+                        <div style={{ fontSize: 10, color: C.textMuted, fontFamily: mono }}>
+                          {trade.symbol} @ {trade.pnlPct >= 0 ? "+" : ""}{trade.pnlPct?.toFixed(2)}% ({fmt(trade.pnl)})
+                        </div>
+                      )}
+                    </div>
+                  ))
+                : fleetStructStatus === "ok" && (
+                  <Body size={12} color={C.textMuted}>No closed trades yet.</Body>
+                )}
+            </Card>
+
+            {/* ── SGAT Shadow Performance ── */}
+            <Card>
+              <SHead icon="👻" title="SGAT Shadow Performance" right={
+                fleetStructStatus === "ok" && sgatFleet.shadowAgents && sgatFleet.shadowAgents.length > 0
+                  ? <Badge color={C.blue}>{sgatFleet.shadowAgents.length} shadow</Badge>
+                  : <Badge color={C.textMuted}>—</Badge>
+              } />
+              <Body size={12} color={C.textSecondary} style={{ marginBottom: 12 }}>
+                Paper trades on Hermes strategies (INFRA/MEAN_REVERSION, DEFI/MOMENTUM, AI/RSI_OVERSOLD, MEME/BREAKOUT). Separate from live fleet.
+              </Body>
+              {fleetStructStatus === "awaiting" && (
+                <Body size={12} color={C.yellow} style={{ marginBottom: 12 }}>
+                  ⧗ Awaiting shadow agent data. Will populate post-trip from ~/sgat/memory/shadow/.
+                </Body>
+              )}
+              {fleetStructStatus === "loading" && (
+                <Body size={12} color={C.textMuted} style={{ marginBottom: 12 }}>
+                  ⟳ Loading shadow agents…
+                </Body>
+              )}
+              {fleetStructStatus === "ok" && sgatFleet.shadowAgents && sgatFleet.shadowAgents.length > 0 ? (
+                <div style={{ display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "100px 60px 70px 80px",
+                  gap: 8, padding: "6px 10px", borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
+                  {(isMobile ? ["Shadow Agent"] : ["Agent","Trades","Win Rate","Avg P&L"]).map(h => (
+                    <p key={h} style={{ fontSize: 9, color: C.textMuted, fontFamily: sans,
+                      letterSpacing: "0.07em", textTransform: "uppercase", margin: 0 }}>{h}</p>
+                  ))}
+                </div>
+              ) : null}
+              {fleetStructStatus === "ok" && sgatFleet.shadowAgents && sgatFleet.shadowAgents.length > 0
+                ? sgatFleet.shadowAgents.map((shadow, i) => (
+                    <div key={i} style={{
+                      background: i % 2 === 0 ? C.surfaceAlt : "transparent",
+                      borderRadius: 8, marginBottom: 3, padding: "10px 10px" }}>
+                      {/* Shadow agent row */}
+                      <div style={{ display: "grid",
+                        gridTemplateColumns: isMobile ? "1fr" : "100px 60px 70px 80px",
+                        gap: 8, marginBottom: shadow.recentTrades && shadow.recentTrades.length > 0 ? 8 : 0 }}>
+                        <p style={{ fontSize: 12, color: C.blue, fontFamily: mono, margin: 0, fontWeight: 600 }}>{shadow.name}</p>
+                        {!isMobile && <p style={{ fontSize: 12, color: C.textSecondary, fontFamily: mono, margin: 0 }}>{shadow.trades ?? "—"}</p>}
+                        {!isMobile && <p style={{ fontSize: 12, color: shadow.winRate >= 50 ? C.greenText : shadow.winRate >= 45 ? C.yellow : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
+                          {shadow.winRate != null ? `${shadow.winRate}%` : "—"}
+                        </p>}
+                        {!isMobile && <p style={{ fontSize: 12, color: (shadow.avgPnl ?? 0) >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
+                          {shadow.avgPnl != null ? `${shadow.avgPnl >= 0 ? "+" : ""}${shadow.avgPnl.toFixed(2)}%` : "—"}
+                        </p>}
+                        {isMobile && (
+                          <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: 0 }}>
+                            {shadow.trades} trades · WR {shadow.winRate ?? "—"}% · Avg {shadow.avgPnl?.toFixed(2) ?? "—"}%
+                          </p>
+                        )}
+                      </div>
+                      {/* Recent trades sub-row */}
+                      {shadow.recentTrades && shadow.recentTrades.length > 0 && (
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {shadow.recentTrades.slice(0, 5).map((t, j) => (
+                            <div key={j} style={{
+                              display: "flex", alignItems: "center", gap: 3,
+                              padding: "2px 6px", borderRadius: 4,
+                              background: C.surfaceHigh, border: `1px solid ${C.border}` }}>
+                              <span style={{ fontSize: 9, color: C.textMuted, fontFamily: mono }}>{t.symbol}</span>
+                              <span style={{ fontSize: 9, color: t.pnl >= 0 ? C.greenText : C.red, fontFamily: mono, fontWeight: 600 }}>
+                                {t.pnl >= 0 ? "+" : ""}{t.pnl.toFixed(1)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                : fleetStructStatus === "ok" && (
+                  <Body size={12} color={C.textMuted}>No shadow agents yet.</Body>
+                )}
             </Card>
 
             <Card>
