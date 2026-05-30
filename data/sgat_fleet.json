@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-05-30T15:15:01.130Z",
+  "total_trades": 8,
+  "per_agent": [
+    {
+      "agent": "SGAT_CASH",
+      "trades": 1,
+      "win_rate": 0,
+      "avg_pnl_pct": -8.53
+    },
+    {
+      "agent": "SGAT_SUI",
+      "trades": 1,
+      "win_rate": 0,
+      "avg_pnl_pct": -51
+    },
+    {
+      "agent": "SGAT_SOL",
+      "trades": 1,
+      "win_rate": 100,
+      "avg_pnl_pct": 4.51
+    },
+    {
+      "agent": "SGAT_SOL_N",
+      "trades": 1,
+      "win_rate": 0,
+      "avg_pnl_pct": -4.29
+    },
+    {
+      "agent": "SGAT_SUI_N",
+      "trades": 1,
+      "win_rate": 100,
+      "avg_pnl_pct": 0.19
+    },
+    {
+      "agent": "SGAT_SOL_BC",
+      "trades": 2,
+      "win_rate": 50,
+      "avg_pnl_pct": 5.07
+    },
+    {
+      "agent": "SGAT_BASE_BC",
+      "trades": 1,
+      "win_rate": 0,
+      "avg_pnl_pct": -10.71
+    }
+  ],
+  "trade_history": [
+    {
+      "agent": "SGAT_SOL_BC",
+      "chain": "solana_bc",
+      "symbol": "TROLL",
+      "reason": "MANUAL_EXIT",
+      "entry_price": 0.07275,
+      "exit_price": 0.08772,
+      "pnl_pct": 20.61,
+      "txId": "4cZPcL7YMVxu6MXcIsEGHzJ8xkjoyK52ciHHgNHn49mfB61BUDPFVFcNPP78VcSK9nTL99DjzAboMWPN4BsETXS2",
+      "closed_at": "2026-05-29T19:32:22Z",
+      "note": "Manual exit via Jupiter — swap script skipPreflight bug",
+      "classification": null
+    },
+    {
+      "agent": "SGAT_BASE_BC",
+      "chain": "base_bc",
+      "symbol": "ALLO",
+      "reason": "STOP_LOSS",
+      "entry_price": 0.264125,
+      "exit_price": 0.235826,
+      "pnl_pct": -10.71,
+      "txId": null,
+      "closed_at": "2026-05-29T17:19:03.770Z",
+      "note": null,
+      "classification": null
+    },
+    {
+      "agent": "SGAT_SOL_BC",
+      "chain": "solana_bc",
+      "symbol": "SLX",
+      "reason": "STOP_LOSS",
+      "entry_price": 0.219324,
+      "exit_price": 0.196385,
+      "pnl_pct": -10.46,
+      "txId": "47dhhmSxGi5G6Q8Qygs3t5XA44rvC7AQCjbKkBdr8DYteAVXfXmWAn1CrSrZJuCmrMtRKvwsZeuJqizypj2sSvue",
+      "closed_at": "2026-05-28T02:31:04.709Z",
+      "note": null,
+      "classification": null
+    },
+    {
+      "agent": "SGAT_SUI_N",
+      "chain": "sui_n",
+      "symbol": "SUI",
+      "reason": "TIME_STOP",
+      "entry_price": 1.1178211564655662,
+      "exit_price": 1.12,
+      "pnl_pct": 0.19,
+      "txId": "7xj778PXYedBma7kKsDYSsBFnVqvMhcVy5s2LougiVnS",
+      "closed_at": "2026-05-22T13:56:12.766Z",
+      "note": null,
+      "classification": null
+    },
+    {
+      "agent": "SGAT_SOL_N",
+      "chain": "solana",
+      "symbol": "SOL",
+      "reason": "TIME_STOP",
+      "entry_price": 93.44587282395165,
+      "exit_price": 89.44102509660456,
+      "pnl_pct": -4.29,
+      "txId": "3ZbUgQy12diri88f4T1QbpvAV2MqFjWcxf6B5p8hCrF5cBP4kutFEijf8kAkBNVVUSRhBgTXZrjkUYTwgnGFWkVR",
+      "closed_at": "2026-05-15T16:32:06.191Z",
+      "note": null,
+      "classification": null
+    },
+    {
+      "agent": "SGAT_SOL",
+      "chain": "sol",
+      "symbol": "TROLL",
+      "reason": "TIME_STOP",
+      "entry_price": 0.122,
+      "exit_price": 0.1275,
+      "pnl_pct": 4.51,
+      "txId": "4SiGpT3AP2NdDuRa46xBUBSkZ4ksUyeGTFcce3dNicJoEPYDAfdiKTrgEVPcAznpYEE1ro7JFGtU2QSkxCSYuCCL",
+      "closed_at": "2026-05-15T05:02:20.455Z",
+      "note": "First winning trade.",
+      "classification": null
+    },
+    {
+      "agent": "SGAT_SUI",
+      "chain": "sui",
+      "symbol": "TRUTH",
+      "reason": "STOP_LOSS",
+      "entry_price": 0.02306,
+      "exit_price": 0.00221,
+      "pnl_pct": -51,
+      "txId": null,
+      "closed_at": "2026-05-14T15:59:03.597Z",
+      "note": "Decimal bug exit misroute. Bought ~$15, recovered ~$7.35 via manual swap 2026-05-26. Real loss ~$7.65 (~51%). Original logged pnl -90.43% was bug exit price, not actual capital loss.",
+      "classification": "DECIMAL_BUG_EXIT"
+    },
+    {
+      "agent": "SGAT_CASH",
+      "chain": "eth",
+      "symbol": "sato",
+      "reason": "STOP_LOSS",
+      "entry_price": 1.29,
+      "exit_price": 1.18,
+      "pnl_pct": -8.53,
+      "txId": "0xf9e180de779b58c581d7fba90890dacd57fad71a536ae81c14e7510319c67c09",
+      "closed_at": "2026-05-13T13:41:25.149Z",
+      "note": "entry_price manually corrected",
+      "classification": null
+    }
+  ]
+}

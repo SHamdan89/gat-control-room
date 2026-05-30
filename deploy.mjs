@@ -20,7 +20,9 @@ writeFileSync(resolve(root, "index.html"), readFileSync(resolve(dist, "app.html"
 // 3. Copy any other top-level static assets (logo, etc.) emitted by the build.
 for (const f of readdirSync(dist)) {
   if (f === "assets" || f === "app.html" || f === "index.html") continue
-  copyFileSync(resolve(dist, f), resolve(root, f))
+  const dest = resolve(root, f)
+  rmSync(dest, { force: true })  // overwrite even if existing copy is read-only
+  copyFileSync(resolve(dist, f), dest)
 }
 
 console.log("Deployed dist/ -> repo root. Served assets:", readdirSync(rootAssets).join(", "))

@@ -1,0 +1,43 @@
+name: Mirror SGAT fleet data
+
+# Google blocks browser fetches to its Drive download endpoints (Sec-Fetch-Site
+# header, un-overridable from JS). A server-side curl is not blocked, so we mirror
+# the public fleet JSON into the Pages site as a same-origin file the app can fetch.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 min (GitHub may delay; matches Mac Mini refresh)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mirror-fleet
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch fleet JSON from Drive
+        run: |
+          mkdir -p data
+          curl -sL --fail --retry 3 --retry-delay 5 \
+            "https://drive.usercontent.google.com/download?id=1XfHi9WqI0kPSnpy9nElrxHzg0NRJSHhV" \
+            -o data/sgat_fleet.json
+          python3 -c "import json; json.load(open('data/sgat_fleet.json'))"
+
+      - name: Commit if changed
+        run: |
+          git config user.name "fleet-mirror-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/sgat_fleet.json
+          if git diff --cached --quiet; then
+            echo "No change in fleet data."
+          else
+            git commit -m "chore: mirror SGAT fleet data [skip ci]"
+            git push
+          fi

@@ -830,8 +830,10 @@ export default function GATControlRoom() {
     }
     setFleetStructStatus("loading");
     const urlsToTry = [
-      // usercontent endpoint sends Access-Control-Allow-Origin:* — drive.google.com/uc returns 403 on a browser CORS request
-      `https://drive.usercontent.google.com/download?id=${SGAT_FLEET_FILE_ID}`,
+      // Same-origin mirror committed by .github/workflows/mirror-fleet.yml every ~15 min.
+      // Google blocks browser fetches to its Drive download endpoints via the
+      // un-overridable Sec-Fetch-Site header, so a same-origin copy is the reliable path.
+      `/data/sgat_fleet.json?t=${Date.now()}`,
     ];
     for (const url of urlsToTry) {
       try {
