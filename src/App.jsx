@@ -73,6 +73,28 @@ const DEFAULT_SGAT_FLEET = {
 // per_agent shape: [{ agent, trades, win_rate, avg_pnl_pct }]
 // trade_history shape: [{ agent, chain, symbol, reason, entry_price, exit_price, pnl_pct, txId, closed_at, note, classification }]
 
+// ── Frozen trip-start baseline balances ───────────────────────
+// Committed constant = the authoritative frozen baseline: identical for every
+// viewer, survives reboots, no browser storage, no Mac Mini dependency.
+// Account P&L = (currentBalance − baseline) / baseline. The per-agent P&L column
+// and the TOTAL SGAT P&L card both use this (NOT trade-return avg_pnl_pct).
+// To re-baseline (rare, deliberate): edit these values and rebuild.
+const BASELINE_BALANCES = {
+  SGAT_SOL: 94.19,  SGAT_BASE: 105.11, SGAT_BSC: 102.28, SGAT_BTCB: 118.00,
+  SGAT_SUI: 116.69, SGAT_SOL_N: 100.07, SGAT_WETH: 119.00, SGAT_BSC_N: 114.85,
+  SGAT_SUI_N: 98.04, SGAT_CASH: 136.54, SGAT_SOL_BC: 110.19, SGAT_BASE_BC: 101.80,
+  SGAT_BSC_BC: 102.00, SGAT_SUI_BC: 115.44,
+};
+const FALLBACK_SGAT_AGENTS = ["SGAT_SOL","SGAT_BASE","SGAT_BSC","SGAT_BTCB","SGAT_SUI","SGAT_SOL_N","SGAT_wETH","SGAT_BSC_N","SGAT_SUI_N","SGAT_CASH","SGAT_SOL_BC","SGAT_BASE_BC","SGAT_BSC_BC","SGAT_SUI_BC"];
+// Current balance for an agent row — mirrors the table's balance logic.
+function agentBalance(ag) {
+  const pos = ag.position || null;
+  return pos ? (pos.total_wallet > 0 ? pos.total_wallet : ag.usdc || 0) : (ag.usdc || 0);
+}
+function baselineFor(name) {
+  return name ? (BASELINE_BALANCES[name.toUpperCase()] ?? null) : null;
+}
+
 // Stocks scaled so holdings sum = $164,100
 // Total nw = 164,100 + 18,500 + 42,300 + 22,450 + 100 = $247,450 — matches chart
 const DEFAULT_STOCKS = {
@@ -856,6 +878,23 @@ export default function GATControlRoom() {
     return () => clearInterval(id);
   }, [fetchSgatFleet]);
 
+  // ── Fleet account-level P&L vs frozen baseline ────────────────
+  // (sum current balances − sum baselines) / sum baselines. Only counts agents
+  // with a known baseline and a real (>0) current balance, so it stays null
+  // (neutral) while the balance feed is still loading.
+  const fleetAccount = useMemo(() => {
+    let cur = 0, base = 0, n = 0;
+    for (const ag of sgatData.agents) {
+      const b = baselineFor(ag.name);
+      if (b == null) continue;
+      const bal = agentBalance(ag);
+      if (!(bal > 0)) continue;
+      cur += bal; base += b; n++;
+    }
+    const pct = base > 0 && n > 0 ? ((cur - base) / base) * 100 : null;
+    return { cur, base, pnl: cur - base, pct, n };
+  }, [sgatData.agents]);
+
   // ── DexScreener live price fetch for held tokens with zero current price ──
   useEffect(() => {
     const addrs = sgatData.agents
@@ -1371,15 +1410,23 @@ export default function GATControlRoom() {
 
             {/* 4 KPIs */}
             <div style={{ display: "grid", gridTemplateColumns: g2, gap: 14 }}>
-              <Card style={{ background: sgatData.pnl >= 0 ? C.greenDim : C.redDim, border: `1px solid ${sgatData.pnl >= 0 ? C.green : C.red}20` }}>
+              {(() => {
+                const up = (fleetAccount.pnl ?? 0) >= 0;
+                const loading = fleetAccount.pct == null;
+                return (
+              <Card style={{ background: loading ? C.surface : up ? C.greenDim : C.redDim, border: `1px solid ${loading ? C.border : (up ? C.green : C.red) + "20"}` }}>
                 <SLabel>SGAT P&L</SLabel>
-                <BigNum color={sgatData.pnl >= 0 ? C.greenText : C.red} size={kpiSize}>
-                  {sgatData.pnl >= 0 ? "+" : ""}{fmt(sgatData.pnl)}
+                <BigNum color={loading ? C.textMuted : up ? C.greenText : C.red} size={kpiSize}>
+                  {loading ? "—" : `${up ? "+" : ""}${fmt(fleetAccount.pnl)}`}
                 </BigNum>
-                <Body size={12} color={sgatData.pnl >= 0 ? C.greenDeep : C.red}>
-                  {sgatData.pnl >= 0 ? "+" : ""}{sgatData.pnlPct}% on {fmt(sgatData.deployed)}
+                <Body size={12} color={loading ? C.textMuted : up ? C.greenDeep : C.red}>
+                  {loading
+                    ? "awaiting balances"
+                    : `${fleetAccount.pct >= 0 ? "+" : ""}${fleetAccount.pct.toFixed(2)}% on ${fmt(fleetAccount.base)}`}
                 </Body>
               </Card>
+                );
+              })()}
               <Card>
                 <SLabel>Stock Portfolio</SLabel>
                 <BigNum size={kpiSize}>{fmt(liveStocksData.total + ibkrCash)}</BigNum>
@@ -1670,6 +1717,10 @@ export default function GATControlRoom() {
                 const pos = ag.position || null;
                 const modeColor = ag.mode === "ABSTAIN" ? C.textMuted : ag.mode === "CANDIDATE_FOUND" ? C.blue : ag.mode === "LONG" || ag.mode === "TRADED" ? C.greenText : ag.mode === "SHORT" ? C.red : C.yellow;
                 const balance = pos ? (pos.total_wallet > 0 ? pos.total_wallet : ag.usdc || 0) : (ag.usdc || 0);
+                // Account-level P&L vs frozen baseline (the P&L column metric).
+                const baseline = baselineFor(ag.name);
+                const accountPnlPct = baseline && baseline > 0 && balance > 0 ? ((balance - baseline) / baseline) * 100 : null;
+                const acctStr = accountPnlPct == null ? "—" : `${accountPnlPct >= 0 ? "+" : ""}${accountPnlPct.toFixed(2)}%`;
                 return (
                   <div key={i} style={{
                     background: i % 2 === 0 ? C.surfaceAlt : "transparent",
@@ -1697,7 +1748,7 @@ export default function GATControlRoom() {
                         )}
                         {isMobile && (
                           <p style={{ fontSize: 10, color: C.textMuted, fontFamily: mono, margin: "2px 0 0" }}>
-                            {agentTrades !== null ? agentTrades : "—"} trades · {agentAvgPnlPct !== null ? fmtP(agentAvgPnlPct) : "—"}
+                            {agentTrades !== null ? agentTrades : "—"} trades · <span style={{ color: accountPnlPct == null ? C.textMuted : accountPnlPct >= 0 ? C.greenText : C.red }}>{acctStr}</span>
                           </p>
                         )}
                       </div>
@@ -1714,24 +1765,12 @@ export default function GATControlRoom() {
                           {agentTrades !== null ? agentTrades : "—"}
                         </p>
                       )}
-                      {!isMobile && (agentAvgPnlPct !== null ? (
-                        <p style={{ fontSize: 12, color: agentAvgPnlPct >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, fontWeight: 600 }}>
-                          {fmtP(agentAvgPnlPct)}
+                      {!isMobile && (
+                        <p style={{ fontSize: 12, fontWeight: 600, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center",
+                          color: accountPnlPct == null ? C.textMuted : accountPnlPct >= 0 ? C.greenText : C.red }}>
+                          {acctStr}
                         </p>
-                      ) : pos && (pos.pnl_pct !== 0 || pos.unrealized_pnl !== 0) ? (
-                        <div style={{ textAlign: "right", alignSelf: "center" }}>
-                          <p style={{ fontSize: 12, color: C.yellow, fontFamily: mono, margin: 0, fontWeight: 600 }}>
-                            {pos.pnl_pct >= 0 ? "+" : ""}{pos.pnl_pct.toFixed(2)}%
-                          </p>
-                          <p style={{ fontSize: 10, color: C.yellow + "99", fontFamily: mono, margin: 0 }}>
-                            ({pos.unrealized_pnl >= 0 ? "+" : ""}{fmt(pos.unrealized_pnl)})
-                          </p>
-                        </div>
-                      ) : (
-                        <p style={{ fontSize: 13, color: (ag.pnl || 0) >= 0 ? C.greenText : C.red, fontFamily: mono, margin: 0, textAlign: "right", alignSelf: "center" }}>
-                          {(ag.pnl || 0) >= 0 ? "+" : ""}{fmt(ag.pnl || 0)}
-                        </p>
-                      ))}
+                      )}
                     </div>
                     {/* Position sub-row — only when a position is open */}
                     {pos && (
@@ -1866,7 +1905,7 @@ export default function GATControlRoom() {
                 Paper trades on Hermes strategies (INFRA/MEAN_REVERSION, DEFI/MOMENTUM, AI/RSI_OVERSOLD, MEME/BREAKOUT). Separate from live fleet.
               </Body>
               <Body size={12} color={C.yellow}>
-                ⧗ Awaiting shadow agent data. Will populate when medicine/signal logs are exported post-trip.
+                Awaiting shadow trades — populates after regime exits BEAR and shadow export is wired (post-trip).
               </Body>
             </Card>
 
@@ -1908,10 +1947,10 @@ export default function GATControlRoom() {
                       {sgatData.performance.winRate != null ? `${sgatData.performance.winRate}%` : "—"}
                     </p>
                   </div>
-                  {/* Avg P&L */}
+                  {/* Avg Trade */}
                   <div style={{ background:C.surfaceAlt, borderRadius:10, padding:"12px 14px", textAlign:"center" }}>
                     <p style={{ fontSize:10, color:C.textMuted, fontFamily:sans, letterSpacing:"0.07em",
-                      textTransform:"uppercase", margin:"0 0 6px" }}>Avg P&L</p>
+                      textTransform:"uppercase", margin:"0 0 6px" }}>AVG TRADE</p>
                     <p style={{ fontSize:24, fontWeight:700, fontFamily:mono, margin:0,
                       color: sgatData.performance.avgPct == null ? C.textMuted
                         : sgatData.performance.avgPct >= 0 ? C.greenText : C.red }}>
