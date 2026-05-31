@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T06:00:00.499Z",
+  "generated_at": "2026-05-31T08:45:00.432Z",
   "total_trades": 8,
   "per_agent": [
     {
@@ -150,5 +150,48 @@
       "note": "entry_price manually corrected",
       "classification": null
     }
-  ]
+  ],
+  "shadow": {
+    "total_trades": 2,
+    "per_agent": [
+      {
+        "agent": "SGAT_BASE_SH",
+        "trades": 1,
+        "win_rate": 0,
+        "avg_pnl_pct": -11.15
+      },
+      {
+        "agent": "SGAT_BSC_SH",
+        "trades": 1,
+        "win_rate": 0,
+        "avg_pnl_pct": -11.06
+      }
+    ],
+    "trade_history": [
+      {
+        "agent": "SGAT_BSC_SH",
+        "chain": "bsc",
+        "symbol": "ALLO",
+        "medicine": "DEFI",
+        "reason": "STOP_LOSS",
+        "entry_price": 0.264024,
+        "exit_price": 0.23482,
+        "pnl_pct": -11.06,
+        "paper_trade": true,
+        "closed_at": "2026-05-30T23:06:01.550Z"
+      },
+      {
+        "agent": "SGAT_BASE_SH",
+        "chain": "base",
+        "symbol": "ALLO",
+        "medicine": "DEFI",
+        "reason": "STOP_LOSS",
+        "entry_price": 0.263248,
+        "exit_price": 0.2339,
+        "pnl_pct": -11.15,
+        "paper_trade": true,
+        "closed_at": "2026-05-30T23:04:01.385Z"
+      }
+    ]
+  }
 }
