@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-31T21:30:00.914Z",
-  "total_trades": 8,
+  "generated_at": "2026-05-31T22:30:00.559Z",
+  "total_trades": 9,
   "per_agent": [
     {
       "agent": "SGAT_CASH",
@@ -34,9 +34,9 @@
     },
     {
       "agent": "SGAT_SOL_BC",
-      "trades": 2,
-      "win_rate": 50,
-      "avg_pnl_pct": 5.07
+      "trades": 3,
+      "win_rate": 33.3,
+      "avg_pnl_pct": 0.54
     },
     {
       "agent": "SGAT_BASE_BC",
@@ -46,6 +46,19 @@
     }
   ],
   "trade_history": [
+    {
+      "agent": "SGAT_SOL_BC",
+      "chain": "solana_bc",
+      "symbol": "TROLL",
+      "reason": "TIME_STOP",
+      "entry_price": 0.08877,
+      "exit_price": 0.08121,
+      "pnl_pct": -8.52,
+      "txId": "5BiJJUsT5FgcDnwVkEqPswXUdsK482YCrj7C275dSX1rmT3NPPMeWynbPpSDNRUyUxuRFCMw1YkFG4KKxJ4gyxBy",
+      "closed_at": "2026-05-31T21:31:05.091Z",
+      "note": null,
+      "classification": null
+    },
     {
       "agent": "SGAT_SOL_BC",
       "chain": "solana_bc",
