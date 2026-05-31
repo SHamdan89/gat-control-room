@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T14:15:00.585Z",
+  "generated_at": "2026-05-31T15:45:00.445Z",
   "total_trades": 8,
   "per_agent": [
     {
@@ -152,7 +152,7 @@
     }
   ],
   "shadow": {
-    "total_trades": 2,
+    "total_trades": 3,
     "per_agent": [
       {
         "agent": "SGAT_BASE_SH",
@@ -165,9 +165,27 @@
         "trades": 1,
         "win_rate": 0,
         "avg_pnl_pct": -11.06
+      },
+      {
+        "agent": "SGAT_ETH_SH",
+        "trades": 1,
+        "win_rate": 100,
+        "avg_pnl_pct": 3.07
       }
     ],
     "trade_history": [
+      {
+        "agent": "SGAT_ETH_SH",
+        "chain": "ethereum",
+        "symbol": "INJ",
+        "medicine": "DEFI",
+        "reason": "TIME_STOP",
+        "entry_price": 6.19,
+        "exit_price": 6.38,
+        "pnl_pct": 3.07,
+        "paper_trade": true,
+        "closed_at": "2026-05-31T15:10:01.638Z"
+      },
       {
         "agent": "SGAT_BSC_SH",
         "chain": "bsc",
