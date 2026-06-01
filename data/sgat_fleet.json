@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T23:30:01.193Z",
+  "generated_at": "2026-06-01T02:00:00.966Z",
   "total_trades": 9,
   "per_agent": [
     {
@@ -165,7 +165,7 @@
     }
   ],
   "shadow": {
-    "total_trades": 3,
+    "total_trades": 5,
     "per_agent": [
       {
         "agent": "SGAT_BASE_SH",
@@ -175,18 +175,30 @@
       },
       {
         "agent": "SGAT_BSC_SH",
-        "trades": 1,
-        "win_rate": 0,
-        "avg_pnl_pct": -11.06
+        "trades": 2,
+        "win_rate": 50,
+        "avg_pnl_pct": 18.86
       },
       {
         "agent": "SGAT_ETH_SH",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 100,
-        "avg_pnl_pct": 3.07
+        "avg_pnl_pct": 35.04
       }
     ],
     "trade_history": [
+      {
+        "agent": "SGAT_ETH_SH",
+        "chain": "ethereum",
+        "symbol": "H",
+        "medicine": "DEFI",
+        "reason": "TAKE_PROFIT",
+        "entry_price": 0.382154,
+        "exit_price": 0.638239,
+        "pnl_pct": 67.01,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T01:10:01.971Z"
+      },
       {
         "agent": "SGAT_ETH_SH",
         "chain": "ethereum",
@@ -198,6 +210,18 @@
         "pnl_pct": 3.07,
         "paper_trade": true,
         "closed_at": "2026-05-31T15:10:01.638Z"
+      },
+      {
+        "agent": "SGAT_BSC_SH",
+        "chain": "bsc",
+        "symbol": "H",
+        "medicine": "DEFI",
+        "reason": "TAKE_PROFIT",
+        "entry_price": 0.389775,
+        "exit_price": 0.579937,
+        "pnl_pct": 48.79,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T01:06:01.055Z"
       },
       {
         "agent": "SGAT_BSC_SH",
