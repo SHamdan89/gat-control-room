@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T02:00:00.966Z",
+  "generated_at": "2026-06-01T07:15:00.387Z",
   "total_trades": 9,
   "per_agent": [
     {
@@ -165,8 +165,14 @@
     }
   ],
   "shadow": {
-    "total_trades": 5,
+    "total_trades": 6,
     "per_agent": [
+      {
+        "agent": "SGAT_SOL_SH",
+        "trades": 1,
+        "win_rate": 100,
+        "avg_pnl_pct": 12.35
+      },
       {
         "agent": "SGAT_BASE_SH",
         "trades": 1,
@@ -246,6 +252,18 @@
         "pnl_pct": -11.15,
         "paper_trade": true,
         "closed_at": "2026-05-30T23:04:01.385Z"
+      },
+      {
+        "agent": "SGAT_SOL_SH",
+        "chain": "solana",
+        "symbol": "HYPE",
+        "medicine": "DEFI",
+        "reason": "TIME_STOP",
+        "entry_price": 65.12,
+        "exit_price": 73.16,
+        "pnl_pct": 12.35,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T05:02:04.198Z"
       }
     ]
   }
