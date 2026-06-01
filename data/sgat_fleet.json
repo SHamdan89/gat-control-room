@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T13:00:00.333Z",
+  "generated_at": "2026-06-01T18:45:00.891Z",
   "total_trades": 9,
   "per_agent": [
     {
@@ -165,13 +165,13 @@
     }
   ],
   "shadow": {
-    "total_trades": 7,
+    "total_trades": 11,
     "per_agent": [
       {
         "agent": "SGAT_SOL_SH",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 100,
-        "avg_pnl_pct": 12.35
+        "avg_pnl_pct": 20.75
       },
       {
         "agent": "SGAT_BASE_SH",
@@ -181,18 +181,36 @@
       },
       {
         "agent": "SGAT_BSC_SH",
-        "trades": 3,
-        "win_rate": 66.7,
-        "avg_pnl_pct": 21.71
+        "trades": 4,
+        "win_rate": 50,
+        "avg_pnl_pct": 13.37
+      },
+      {
+        "agent": "SGAT_SUI_SH",
+        "trades": 1,
+        "win_rate": 0,
+        "avg_pnl_pct": -0.63
       },
       {
         "agent": "SGAT_ETH_SH",
-        "trades": 2,
+        "trades": 3,
         "win_rate": 100,
-        "avg_pnl_pct": 35.04
+        "avg_pnl_pct": 32.98
       }
     ],
     "trade_history": [
+      {
+        "agent": "SGAT_ETH_SH",
+        "chain": "ethereum",
+        "symbol": "H",
+        "medicine": "DEFI",
+        "reason": "TAKE_PROFIT",
+        "entry_price": 0.626858,
+        "exit_price": 0.807843,
+        "pnl_pct": 28.87,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T13:10:03.527Z"
+      },
       {
         "agent": "SGAT_ETH_SH",
         "chain": "ethereum",
@@ -216,6 +234,30 @@
         "pnl_pct": 3.07,
         "paper_trade": true,
         "closed_at": "2026-05-31T15:10:01.638Z"
+      },
+      {
+        "agent": "SGAT_SUI_SH",
+        "chain": "sui",
+        "symbol": "MAGMA",
+        "medicine": "DEFI",
+        "reason": "TIME_STOP",
+        "entry_price": 0.283489,
+        "exit_price": 0.281709,
+        "pnl_pct": -0.63,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T16:08:01.846Z"
+      },
+      {
+        "agent": "SGAT_BSC_SH",
+        "chain": "bsc",
+        "symbol": "H",
+        "medicine": "DEFI",
+        "reason": "STOP_LOSS",
+        "entry_price": 0.738837,
+        "exit_price": 0.652702,
+        "pnl_pct": -11.66,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T16:06:01.507Z"
       },
       {
         "agent": "SGAT_BSC_SH",
@@ -264,6 +306,18 @@
         "pnl_pct": -11.15,
         "paper_trade": true,
         "closed_at": "2026-05-30T23:04:01.385Z"
+      },
+      {
+        "agent": "SGAT_SOL_SH",
+        "chain": "solana",
+        "symbol": "HOME",
+        "medicine": "DEFI",
+        "reason": "TAKE_PROFIT",
+        "entry_price": 0.03948278,
+        "exit_price": 0.05099,
+        "pnl_pct": 29.14,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T15:02:00.895Z"
       },
       {
         "agent": "SGAT_SOL_SH",
