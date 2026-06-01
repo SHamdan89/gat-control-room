@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T07:15:00.387Z",
+  "generated_at": "2026-06-01T13:00:00.333Z",
   "total_trades": 9,
   "per_agent": [
     {
@@ -165,7 +165,7 @@
     }
   ],
   "shadow": {
-    "total_trades": 6,
+    "total_trades": 7,
     "per_agent": [
       {
         "agent": "SGAT_SOL_SH",
@@ -181,9 +181,9 @@
       },
       {
         "agent": "SGAT_BSC_SH",
-        "trades": 2,
-        "win_rate": 50,
-        "avg_pnl_pct": 18.86
+        "trades": 3,
+        "win_rate": 66.7,
+        "avg_pnl_pct": 21.71
       },
       {
         "agent": "SGAT_ETH_SH",
@@ -216,6 +216,18 @@
         "pnl_pct": 3.07,
         "paper_trade": true,
         "closed_at": "2026-05-31T15:10:01.638Z"
+      },
+      {
+        "agent": "SGAT_BSC_SH",
+        "chain": "bsc",
+        "symbol": "H",
+        "medicine": "DEFI",
+        "reason": "TAKE_PROFIT",
+        "entry_price": 0.579937,
+        "exit_price": 0.738837,
+        "pnl_pct": 27.4,
+        "paper_trade": true,
+        "closed_at": "2026-06-01T10:06:00.919Z"
       },
       {
         "agent": "SGAT_BSC_SH",
