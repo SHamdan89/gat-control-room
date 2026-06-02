@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T23:15:00.536Z",
+  "generated_at": "2026-06-02T01:45:00.158Z",
   "total_trades": 9,
   "per_agent": [
     {
@@ -165,7 +165,7 @@
     }
   ],
   "shadow": {
-    "total_trades": 11,
+    "total_trades": 12,
     "per_agent": [
       {
         "agent": "SGAT_SOL_SH",
@@ -175,9 +175,9 @@
       },
       {
         "agent": "SGAT_BASE_SH",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 0,
-        "avg_pnl_pct": -11.15
+        "avg_pnl_pct": -7.58
       },
       {
         "agent": "SGAT_BSC_SH",
@@ -294,6 +294,18 @@
         "pnl_pct": -11.06,
         "paper_trade": true,
         "closed_at": "2026-05-30T23:06:01.550Z"
+      },
+      {
+        "agent": "SGAT_BASE_SH",
+        "chain": "base",
+        "symbol": "CAKE",
+        "medicine": "DEFI",
+        "reason": "TIME_STOP",
+        "entry_price": 1.5,
+        "exit_price": 1.44,
+        "pnl_pct": -4,
+        "paper_trade": true,
+        "closed_at": "2026-06-02T01:04:01.649Z"
       },
       {
         "agent": "SGAT_BASE_SH",
