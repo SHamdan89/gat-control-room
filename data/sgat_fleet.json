@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T21:30:00.401Z",
+  "generated_at": "2026-06-02T23:15:01.132Z",
   "total_trades": 10,
   "per_agent": [
     {
@@ -178,7 +178,7 @@
     }
   ],
   "shadow": {
-    "total_trades": 12,
+    "total_trades": 13,
     "per_agent": [
       {
         "agent": "SGAT_SOL_SH",
@@ -200,9 +200,9 @@
       },
       {
         "agent": "SGAT_SUI_SH",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 0,
-        "avg_pnl_pct": -0.63
+        "avg_pnl_pct": -4.04
       },
       {
         "agent": "SGAT_ETH_SH",
@@ -247,6 +247,18 @@
         "pnl_pct": 3.07,
         "paper_trade": true,
         "closed_at": "2026-05-31T15:10:01.638Z"
+      },
+      {
+        "agent": "SGAT_SUI_SH",
+        "chain": "sui",
+        "symbol": "BCE",
+        "medicine": "INFRA",
+        "reason": "TIME_STOP",
+        "entry_price": 0.166683,
+        "exit_price": 0.154241,
+        "pnl_pct": -7.46,
+        "paper_trade": true,
+        "closed_at": "2026-06-02T22:08:01.471Z"
       },
       {
         "agent": "SGAT_SUI_SH",
