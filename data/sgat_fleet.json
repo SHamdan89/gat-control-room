@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-02T06:30:00.989Z",
-  "total_trades": 9,
+  "generated_at": "2026-06-02T11:00:00.753Z",
+  "total_trades": 10,
   "per_agent": [
     {
       "agent": "SGAT_CASH",
@@ -34,9 +34,9 @@
     },
     {
       "agent": "SGAT_SOL_BC",
-      "trades": 3,
-      "win_rate": 33.3,
-      "avg_pnl_pct": 0.54
+      "trades": 4,
+      "win_rate": 50,
+      "avg_pnl_pct": 5.52
     },
     {
       "agent": "SGAT_BASE_BC",
@@ -46,6 +46,19 @@
     }
   ],
   "trade_history": [
+    {
+      "agent": "SGAT_SOL_BC",
+      "chain": "solana_bc",
+      "symbol": "JTO",
+      "reason": "TAKE_PROFIT",
+      "entry_price": 0.572382,
+      "exit_price": 0.689356,
+      "pnl_pct": 20.44,
+      "txId": "2KQrHcYc1xwEVm975LhnoXrtoP7Nzhstfe3FzbxjwETqsV2kXYU9ARavyiQGKGdrifLHeXAvEvFezjBjXbcYovzo",
+      "closed_at": "2026-06-02T08:46:05.424Z",
+      "note": null,
+      "classification": null
+    },
     {
       "agent": "SGAT_SOL_BC",
       "chain": "solana_bc",
