@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T00:15:00.614Z",
+  "generated_at": "2026-06-04T05:15:00.605Z",
   "total_trades": 10,
   "per_agent": [
     {
@@ -178,13 +178,13 @@
     }
   ],
   "shadow": {
-    "total_trades": 13,
+    "total_trades": 15,
     "per_agent": [
       {
         "agent": "SGAT_SOL_SH",
-        "trades": 2,
+        "trades": 3,
         "win_rate": 100,
-        "avg_pnl_pct": 20.75
+        "avg_pnl_pct": 15.12
       },
       {
         "agent": "SGAT_BASE_SH",
@@ -206,12 +206,24 @@
       },
       {
         "agent": "SGAT_ETH_SH",
-        "trades": 3,
-        "win_rate": 100,
-        "avg_pnl_pct": 32.98
+        "trades": 4,
+        "win_rate": 75,
+        "avg_pnl_pct": 21.88
       }
     ],
     "trade_history": [
+      {
+        "agent": "SGAT_ETH_SH",
+        "chain": "ethereum",
+        "symbol": "ICP",
+        "medicine": "DEFI",
+        "reason": "STOP_LOSS",
+        "entry_price": 3.15,
+        "exit_price": 2.79,
+        "pnl_pct": -11.43,
+        "paper_trade": true,
+        "closed_at": "2026-06-04T02:10:03.297Z"
+      },
       {
         "agent": "SGAT_ETH_SH",
         "chain": "ethereum",
@@ -343,6 +355,18 @@
         "pnl_pct": -11.15,
         "paper_trade": true,
         "closed_at": "2026-05-30T23:04:01.385Z"
+      },
+      {
+        "agent": "SGAT_SOL_SH",
+        "chain": "solana",
+        "symbol": "JTO",
+        "medicine": "DEFI",
+        "reason": "TIME_STOP",
+        "entry_price": 0.603533,
+        "exit_price": 0.626826,
+        "pnl_pct": 3.86,
+        "paper_trade": true,
+        "closed_at": "2026-06-04T05:02:00.830Z"
       },
       {
         "agent": "SGAT_SOL_SH",
