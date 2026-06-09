@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-09T19:00:00.215Z",
-  "total_trades": 11,
+  "generated_at": "2026-06-09T21:00:00.810Z",
+  "total_trades": 12,
   "per_agent": [
     {
       "agent": "SGAT_CASH",
@@ -40,9 +40,9 @@
     },
     {
       "agent": "SGAT_BASE_BC",
-      "trades": 1,
-      "win_rate": 0,
-      "avg_pnl_pct": -10.71
+      "trades": 2,
+      "win_rate": 50,
+      "avg_pnl_pct": -4.03
     },
     {
       "agent": "SGAT_BSC_BC",
@@ -52,6 +52,19 @@
     }
   ],
   "trade_history": [
+    {
+      "agent": "SGAT_BASE_BC",
+      "chain": "base_bc",
+      "symbol": "COMP",
+      "reason": "TIME_STOP",
+      "entry_price": 18.03,
+      "exit_price": 18.51,
+      "pnl_pct": 2.66,
+      "txId": "0x34d0f23423bce215913907e1ab56645480cc13b62e22b34a46b6a72a9a5da2dc",
+      "closed_at": "2026-06-09T19:34:14.706Z",
+      "note": null,
+      "classification": null
+    },
     {
       "agent": "SGAT_BSC_BC",
       "chain": "bsc_bc",
