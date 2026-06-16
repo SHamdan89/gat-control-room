@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-16T20:30:00.437Z",
-  "total_trades": 12,
+  "generated_at": "2026-06-16T22:30:01.097Z",
+  "total_trades": 13,
   "per_agent": [
     {
       "agent": "SGAT_CASH",
@@ -49,9 +49,24 @@
       "trades": 1,
       "win_rate": 0,
       "avg_pnl_pct": -3.17
+    },
+    {
+      "agent": "SGAT_BTCB",
+      "trades": 1,
+      "win_rate": 0,
+      "avg_pnl_pct": 0
     }
   ],
   "trade_history": [
+    {
+      "agent": "SGAT_BTCB",
+      "symbol": "BTCB",
+      "reason": "MANUAL_BUGFIX_EXIT",
+      "entry_price": 65607.25,
+      "txId": "0xd03d61b819e0ce5c580a22fb9012958bad3d1e72c93dcc99d02864b0c23fa07d",
+      "note": "Auto-exit failed 22h: WALLET_ADDRESS undefined -> 80 BTCB fallback -> STF. Manual sell.",
+      "classification": null
+    },
     {
       "agent": "SGAT_BASE_BC",
       "chain": "base_bc",
