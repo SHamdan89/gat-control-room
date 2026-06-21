@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-21T13:45:00.280Z",
-  "total_trades": 14,
+  "generated_at": "2026-06-21T15:45:00.555Z",
+  "total_trades": 15,
   "per_agent": [
     {
       "agent": "SGAT_CASH",
@@ -52,12 +52,25 @@
     },
     {
       "agent": "SGAT_BTCB",
-      "trades": 1,
-      "win_rate": 0,
-      "avg_pnl_pct": 0
+      "trades": 2,
+      "win_rate": 50,
+      "avg_pnl_pct": 0.04
     }
   ],
   "trade_history": [
+    {
+      "agent": "SGAT_BTCB",
+      "chain": "btcb",
+      "symbol": "BTCB",
+      "reason": "TIME_STOP",
+      "entry_price": 64200.49,
+      "exit_price": 64250.29,
+      "pnl_pct": 0.08,
+      "txId": "0xb11b5a4f8f385442f781972a34f7a41727771052841f8f7d8c075551fa52c67e",
+      "closed_at": "2026-06-21T15:42:11.931Z",
+      "note": null,
+      "classification": null
+    },
     {
       "agent": "SGAT_SOL_BC",
       "chain": "solana_bc",
